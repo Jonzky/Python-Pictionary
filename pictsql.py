@@ -35,10 +35,10 @@ class SQLManager(threading.Thread):
 
 		print(self.data)
 	
-	def add_user(self, table, username, password, email):
+	def add_user(self, username, password, email):
 		
 		a = """insert into {}(username,password,email)
-		values (?,?,?)""".format(table)
+		values (?,?,?)""".format(self.table)
 		data = (username, password, email,)
 		self.con.execute(a, data)	
 		self.connection.commit()

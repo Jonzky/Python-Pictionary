@@ -18,6 +18,10 @@ class UserInterface(Frame):
 		self.loggedin = False
 		self.connected = False
 		self.make_connection()
+		self.registration_success = True
+		self.registration_failed = False
+		self.registration_failed_username = False
+		self.registration_failed_email = False
 		self.master.protocol("WM_DELETE_WINDOW", self.quit)
 	
 	def quit(self):
@@ -54,14 +58,16 @@ class UserInterface(Frame):
 		self.Login_Password = Entry(self.login_Window, show="*")
 		self.Login_Submit = Button(self.login_Window, text='Submit', command=self.submit_login)
 		self.Login_Clear = Button(self.login_Window, text='Clear', command=self.clear_login)
-		self.CreateAccount = Button(self.login_Window, text='Create a account', command=self.make_registration)
+		self.CreateAccount = Button(self.login_Window, text='Create an account', command=self.make_registration)
 		self.LUsername = Label(self.login_Window,text="Username:")
 		self.LPassword = Label(self.login_Window,text="Password:")
+		self.LTitle = Label(self.login_Window, text='Login Form:')
 		self.Login_Username.grid(row=1, column=1)
 		self.Login_Password.grid(row=2, column=1)
 		self.LUsername.grid(row=1, column=0)
-		self.CreateAccount.grid(row=2, column=3)
+		self.CreateAccount.grid(row=3, column=1)
 		self.LPassword.grid(row=2, column=0)
+		self.LTitle.grid(row=0, column=1)
 		self.Login_Clear.grid(row=1, column=2)
 		self.Login_Submit.grid(row=2, column=2)
 
@@ -72,14 +78,13 @@ class UserInterface(Frame):
 
 		self.Registration_Window = Toplevel(self.login_Window)		
 		self.Registration_Window.protocol("WM_DELETE_WINDOW", self.quit)
-
 		self.Nickname = Entry(self.Registration_Window)
 		self.Username = Entry(self.Registration_Window)
 		self.Password = Entry(self.Registration_Window, show="*")
 		self.Email = Entry(self.Registration_Window)
-		print("Test")
 		self.Submit = Button(self.Registration_Window, text='Submit', command=self.submit_registration)
 		self.Clear = Button(self.Registration_Window, text='Clear', command=self.clear_registration)
+		self.Cancel = Button(self.Registration_Window,text='Cancel', command=self.cancel_registration)
 		self.LNickname = Label(self.Registration_Window,text="Nickname:")
 		self.LUsername = Label(self.Registration_Window,text="Username:")
 		self.LPassword = Label(self.Registration_Window,text="Password:")
@@ -88,6 +93,7 @@ class UserInterface(Frame):
 		self.Username.grid(row=1, column=1)
 		self.Password.grid(row=2, column=1)
 		self.Email.grid(row=3, column=1)
+		self.Cancel.grid(row=3, column=2)
 		self.LNickname.grid(row=0, column=0)
 		self.LUsername.grid(row=1, column=0)
 		self.LPassword.grid(row=2, column=0)
@@ -101,12 +107,16 @@ class UserInterface(Frame):
 		self.EUsername = self.Username.get().lower()
 		self.EPassword = self.Password.get().lower()
 		self.EEmail = self.Email.get().lower()
-		self.Registration_Window.withdraw()
-		self.login_Window.deiconify()
+		self.ENick = self.Nickname.get().lower()
+#		self.Registration_Window.withdraw()
+#		self.login_Window.deiconify()
+
+		data = "{}|{}|{}|{}".format(self.EUsername, self.EPassword, self.EEmail, self.ENick)
+		packet = "Registration^{}".format(data)
+		self.client_socket.send_data(packet)
 
 	def submit_connection(self):
 
-		print(self)
 		self.EAddress = self.Address.get()
 		
 		try:		
@@ -122,7 +132,6 @@ class UserInterface(Frame):
 
 		try:
 			self.client_socket.start()
-			print("Socket?")
 			#Timer needed otherwise the the threaded functions will not run in time.
 			time.sleep(2.0)			
 			if self.connected == False:
@@ -145,7 +154,6 @@ class UserInterface(Frame):
 		self.EPassword = self.Login_Password.get().lower()
 		data = "{}|{}".format(self.EUsername, self.EPassword)
 		packet = "Login^{}".format(data)
-		print(packet)
 
 		self.client_socket.send_data(packet)
 		time.sleep(2)
@@ -162,6 +170,11 @@ class UserInterface(Frame):
 		pass
 	def clear_registration(self):
 		pass
+	def cancel_registration(self):
+		
+		self.Registration_Window.withdraw()
+		self.login_Window.deiconify()
+		
 root = Tk()
 a = UserInterface(root)
 a.mainloop()

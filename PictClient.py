@@ -22,7 +22,6 @@ class ClientConnection(threading.Thread):
 		
 		threading.Thread.__init__(self)
 		self.handler = handler
-		print(handler)	
 
 	def run(self):
 		
@@ -52,7 +51,7 @@ class ClientConnection(threading.Thread):
 
 					if decoded_data == "*loggEdin*":
 						print("Fuck yeh")
-						self.handler.loggedin = True						
+						self.handler.loggedin = True
 						break
 					elif decoded_data == "*faiLed*":
 						self.handler.failed = True
@@ -61,6 +60,10 @@ class ClientConnection(threading.Thread):
 						print("Server shutting down...")
 						sock.close()
 						socket_connected = False
+					elif decoded_data == "***UsernAmeuSed***":
+						print("username used")
+					elif decoded_data == "***EmailtAken***":
+						print("email used...")
 
 					continue
 
@@ -97,8 +100,6 @@ class ClientConnection(threading.Thread):
 		except socket.error as error:
 			
 			sys.exit("An error has occured, please try to connect to the host again, ERROR: {}".format(error))
-		
-
 
 #Adds some reusability to the code above
 if __name__ == "__main__":

@@ -68,10 +68,22 @@ class TCPHandler(socketserver.BaseRequestHandler):
 		if header == 'Registration':
 			field_data =splitted_data[1].split("|")
 			
+			print(field_data[0])
+			if b.check_field('username', field_data[0]):
+				username_used = "***UsernAmeuSed***".encode("utf8")
+				self.request.send(username_used)
+				print("Used Already")
+			elif b.check_field('email', field_data[2]):
+				email_used = "***EmailtAken***".encode("utf8")
+				self.request.send(email_used)		
+				print("Email used")
+			else:
+				print("Addd Free")
+				b.add_user(field_data[0], field_data[1], field_data[2])
+
 		elif header == 'Login':
 			field_data = splitted_data[1].split("|")
 			self.Username, self.Password = field_data
-			print("User {} Password {}".format(self.Username, self.Password))
 			if not b.user_login(self.Username, self.Password):
 
 				failedloggedin = "*faiLed*".encode("utf8")
@@ -80,12 +92,6 @@ class TCPHandler(socketserver.BaseRequestHandler):
 			else:
 				loggedin = "*loggEdin*".encode("utf8")
 				self.request.send(loggedin)
-
-#		elif header = 'Guess':
-#			pass
-#		elif header = 'Message':		
-#			check_data(splitted_data[1])
-
 
 	def client_join(self, client_name):
 		"""Lets other clients know when someone joins the server, you need to specify the name of
