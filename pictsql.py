@@ -6,14 +6,11 @@ class SQLManager():
 
 	def __init__(self):
 				
-		self.path = ""
+		self.path = "./data"
 		self.database = ""
+		self.table = "user"
 		
 	def main(self):
-	
-		if self.path or self.database == "":
-			
-			print("Error")
 		
 		if not os.path.exists(self.path):
 			os.makedirs("./data")
@@ -45,12 +42,10 @@ class SQLManager():
 		self.con.execute(a, data)	
 		self.connection.commit()
 		
-	def check_username(self, table, field, value):
+	def check_field(self, field, value):
 		
-		a = "SELECT score FROM user WHERE username = ?", ('usernametest')
-		name = (value,)
-		
-		exec_str = 'select * from {} where {}=?'.format(table, field)
+		name = (value,)	
+		exec_str = 'select * from {} where {}=?'.format(self.table, field)
 		self.con.execute(exec_str, name)
 		data = self.con.fetchone()
 
