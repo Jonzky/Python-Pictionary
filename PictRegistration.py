@@ -3,18 +3,12 @@ from tkinter.messagebox import showwarning as errorbox
 from tkinter.messagebox import showinfo as infobox
 import os, sys
 
-#Will need to work out the right dimensions based on number of widgets...
-w, h = 1000, 600
-
 class RegistrationWindow():
 	
 	def __init__(self):
 	
 		self.frame = Tk()
-		self.frame.title("Registration form")
-#		self.frame.pack()
-#		self.grid()
-		
+		self.frame.title("Registration form")		
 		self.make_widgets()
 		
 		
@@ -50,8 +44,6 @@ class RegistrationWindow():
 		self.Username.delete(0, END)
 		self.Password.delete(0, END)
 		self.Email.delete(0, END)
-#		errorbox("An error has occured!", "Please check all entries are valid")
-
 	
 	def check_entry(self):
 		
@@ -81,6 +73,56 @@ class RegistrationWindow():
 		self.EEmail = self.Email.get().lower()
 		
 		self.check_entry()
+
+
+class LoginWindow():
+	
+	def __init__(self):
+	
+		self.frame = Tk()
+		self.frame.title("Login form")		
+		self.make_widgets()
+		
+		
+	def make_widgets(self):	
+		
+		self.Username = Entry(self.frame)
+		self.Password = Entry(self.frame, show="*")
+		self.Submit = Button(self.frame, text='Submit', command=self.submit)
+		self.Clear = Button( self.frame, text='Clear', command=self.clear)
+		#L... is the label equivilant to the entry (text box)
+		
+		self.LUsername = Label(self.frame,text="Username:")
+		self.LPassword = Label(self.frame,text="Password:")
+
+		self.Username.grid(row=1, column=1)
+		self.Password.grid(row=2, column=1)
+		self.LUsername.grid(row=1, column=0)
+		self.LPassword.grid(row=2, column=0)
+		self.Clear.grid(row=1, column=2)
+		self.Submit.grid(row=2, column=2)
+	
+	def clear(self):
+	
+		self.Username.delete(0, END)
+		self.Password.delete(0, END)
+	
+	def check_entry(self):
+		
+		if len(self.EUsername) <=2:
+			errorbox("Invalid username!", "Your username needs to be over 2 characters.")
+			return
+		if b.check_field('username', self.EUsername) == False:
+			pass
+		else:	
+			errorbox("Username already taken!", "This username has been taken already, please choose another.")
+			return
+	def submit(self):
+		
+		self.EUsername = self.Username.get().lower()
+		self.EPassword = self.Password.get().lower()		
+		self.check_entry()
+
 		
 import pictsql
 b = pictsql.SQLManager()
@@ -92,3 +134,7 @@ b.field = 'username'
 
 a = RegistrationWindow()
 a.frame.mainloop()
+
+c = LoginWindow()
+print("pung")
+c.frame.mainloop()
