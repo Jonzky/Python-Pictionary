@@ -2,9 +2,65 @@ from tkinter import *
 from tkinter.messagebox import showwarning as errorbox
 from tkinter.messagebox import showinfo as infobox
 import os, sys
+import PictClient
+
+class ServerWindow():
+
+	def __init__(self):
+	
+		self.frame = Tk()
+		self.frame.title("Python Pictionary")		
+		self.make_widgets()	
+		
+	def make_widgets(self):	
+		
+		self.Address = Entry(self.frame)
+		self.Port = Entry(self.frame)
+				
+		self.Submit = Button(self.frame, text='Submit', command=self.submit)
+		self.Clear = Button( self.frame, text='Clear', command=self.clear)
+		#L... is the label equivilant to the entry (text box)
+		
+		self.LAddress = Label(self.frame,text="Sever Address:")
+		self.LPort = Label(self.frame,text="Sever port:")
+		
+		self.Address.grid(row=0, column=1)
+		self.Port.grid(row=1, column=1)
+		self.LAddress.grid(row=0, column=0)
+		self.LPort.grid(row=1, column0)		
+		self.Submit.grid(row=0, column=2)
+		self.Clear.grid(row=1, column=2)
+
+	
+	def clear(self):
+	
+		self.Nickname.delete(0, END)
+		self.Username.delete(0, END)
+		self.Password.delete(0, END)
+		self.Email.delete(0, END)
+		
+		
+	def submit(self):
+		
+		while not self.connected:
+			client_socket.easy_host = '127.0.0.1'
+			client_socket.host_port = 2200
+			client_socket.daemon = True
+			try:
+				client_socket.start()
+				time.sleep(1)
+			except:	
+				errorbox("Unable to connect", "Please check the server address/port is correct and/or you are connected to the internet")
+		connected = True		
 
 class RegistrationWindow():
-	
+		client_socket = ClientConnection()
+	client_socket.easy_host = '127.0.0.1'
+	client_socket.host_port = 2200
+	client_socket.daemon = True
+	client_socket.start()
+	time.sleep(1)
+	connected = True
 	def __init__(self):
 	
 		self.frame = Tk()
@@ -70,7 +126,13 @@ class RegistrationWindow():
 		self.ENickname = self.Nickname.get().lower()
 		self.EUsername = self.Username.get().lower()
 		self.EPassword = self.Password.get().lower()
-		self.EEmail = self.Email.get().lower()
+		self.EEmail = self	client_socket = ClientConnection()
+	client_socket.easy_host = '127.0.0.1'
+	client_socket.host_port = 2200
+	client_socket.daemon = True
+	client_socket.start()
+	time.sleep(1)
+	connected = True.Email.get().lower()
 		
 		self.check_entry()
 
@@ -122,8 +184,19 @@ class LoginWindow():
 		self.EUsername = self.Username.get().lower()
 		self.EPassword = self.Password.get().lower()		
 		self.check_entry()
-
 		
+
+def serverlogin():
+
+	client_socket = ClientConnection()
+	client_socket.easy_host = '127.0.0.1'
+	client_socket.host_port = 2200
+	client_socket.daemon = True
+	client_socket.start()
+	time.sleep(1)
+	connected = True
+	print("Teg")
+
 import pictsql
 b = pictsql.SQLManager()
 b.path = './data'

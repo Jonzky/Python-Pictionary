@@ -77,46 +77,10 @@ class ClientConnection(threading.Thread):
 		
 
 
-
-def client_input(host, port):
-	"""This creates the socket on the client and also prompts the client to input messages to be sent"""
-
-	client_socket = ClientConnection()
-	client_socket.easy_host = host
-	client_socket.host_port = port
-	
-	# After hours of issues it came down to the thread not being daemon and it would restict the
-	# program from terminating...
-	client_socket.daemon = True
-	client_socket.start()
-
-	time.sleep(1)
-	connected = True
-	print("Teg")
-
-def main():
-	"""The main function which allows the user to choose what the application should be used for
-		(client/server)"""
-
-	while not connected:
-
-		if not socket_connected:
-			sys.exit("The server has been shutdown")
-		
-		try:		
-	
-			server_port = int(input("Please input the server's port to join >> "))
-			client_input(easy_host, server_port)
-			
-		except (OverflowError, ValueError):
-			print("The chosen port must be between 0-65535, please try again")
-
-		print(connected)
-
 #Adds some reusability to the code above
 if __name__ == "__main__":
 
-	main()
+	pass
 		
 		
 		
