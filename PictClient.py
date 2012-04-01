@@ -38,7 +38,8 @@ class ClientConnection(threading.Thread):
 		
 			print("The chosen port must be between 0-65535, please try again")
 			main()
-		
+
+				
 		#Now the client can recieve chat messages
 		while True:
 			try:	

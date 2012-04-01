@@ -12,13 +12,11 @@ connected_clients_test = {}
 class TCPHandler(socketserver.BaseRequestHandler):
 	"""This handles the server for a multi-user chat client,
 		it allows clients to connect to the server, it handles mainting the server"""
-	
-	def __init__(self):
-	
-		self.loggedin = False
-		
+			
 	def handle(self):
-
+	
+		print("user connected")		
+		self.loggedin = False
 		while not self.loggedin:
 			
 			data = self.request.recv(1024).decode("utf-8")
@@ -167,5 +165,5 @@ def server_start(host, port):
 		server.shutdown()
 		sys.exit("Client closed.")
 
-server_start('127.0.0.1', 2200)			
+server_start('127.0.0.1', 2400)			
 

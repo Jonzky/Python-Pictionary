@@ -1,20 +1,21 @@
 from tkinter import *
 from tkinter.messagebox import showwarning as errorbox
 from tkinter.messagebox import showinfo as infobox
-import os, sys
-import PictClient
+import os, sys, time
+from PictClient import ClientConnection
 
 class ServerWindow():
 
 	def __init__(self):
 	
 		self.frame = Tk()
-		self.frame.title("Python Pictionary")		
+		self.frame.title("Python Pictionary")
+		self.connected = False		
 		self.make_widgets()	
 		
 	def make_widgets(self):	
 		
-		self.Address = Entry(self.frame)
+		self.Address = Entry(self.frame, text='127.0.0.1')
 		self.Port = Entry(self.frame)
 				
 		self.Submit = Button(self.frame, text='Submit', command=self.submit)
@@ -27,40 +28,38 @@ class ServerWindow():
 		self.Address.grid(row=0, column=1)
 		self.Port.grid(row=1, column=1)
 		self.LAddress.grid(row=0, column=0)
-		self.LPort.grid(row=1, column0)		
+		self.LPort.grid(row=1, column=0)		
 		self.Submit.grid(row=0, column=2)
 		self.Clear.grid(row=1, column=2)
 
 	
 	def clear(self):
 	
-		self.Nickname.delete(0, END)
-		self.Username.delete(0, END)
-		self.Password.delete(0, END)
-		self.Email.delete(0, END)
-		
+		self.Address.delete(0, END)
+		self.Port.delete(0, END)
 		
 	def submit(self):
 		
+#		try:		
+		self.EAddress = self.Address.get()
+		self.EPort = int(self.Port.get())
+
 		while not self.connected:
-			client_socket.easy_host = '127.0.0.1'
-			client_socket.host_port = 2200
+			client_socket = ClientConnection()			
+			client_socket.easy_host = self.EAddress
+			client_socket.host_port = self.EPort
 			client_socket.daemon = True
 			try:
 				client_socket.start()
+				self.connected = True
+				print("conncncn")
 				time.sleep(1)
-			except:	
+
+			except ValueError:	
 				errorbox("Unable to connect", "Please check the server address/port is correct and/or you are connected to the internet")
-		connected = True		
 
 class RegistrationWindow():
-		client_socket = ClientConnection()
-	client_socket.easy_host = '127.0.0.1'
-	client_socket.host_port = 2200
-	client_socket.daemon = True
-	client_socket.start()
-	time.sleep(1)
-	connected = True
+
 	def __init__(self):
 	
 		self.frame = Tk()
@@ -126,14 +125,7 @@ class RegistrationWindow():
 		self.ENickname = self.Nickname.get().lower()
 		self.EUsername = self.Username.get().lower()
 		self.EPassword = self.Password.get().lower()
-		self.EEmail = self	client_socket = ClientConnection()
-	client_socket.easy_host = '127.0.0.1'
-	client_socket.host_port = 2200
-	client_socket.daemon = True
-	client_socket.start()
-	time.sleep(1)
-	connected = True.Email.get().lower()
-		
+		self.EEmail = self.Email.get().lower()
 		self.check_entry()
 
 
@@ -147,7 +139,7 @@ class LoginWindow():
 		
 		
 	def make_widgets(self):	
-		
+		  
 		self.Username = Entry(self.frame)
 		self.Password = Entry(self.frame, show="*")
 		self.Submit = Button(self.frame, text='Submit', command=self.submit)
@@ -198,16 +190,16 @@ def serverlogin():
 	print("Teg")
 
 import pictsql
-b = pictsql.SQLManager()
-b.path = './data'
-b.main()
+#b = pictsql.SQLManager()
+#b.path = './data'
+#b.main()
 
-b.field = 'username'
+#b.field = 'username'
 
 
-a = RegistrationWindow()
-a.frame.mainloop()
+#a = RegistrationWindow()
+#a.frame.mainloop()
 
-c = LoginWindow()
+c = ServerWindow()
 print("pung")
 c.frame.mainloop()
