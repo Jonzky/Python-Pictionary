@@ -5,6 +5,7 @@
 import socket, socketserver, threading, sys, time
 from datetime import datetime
 from getpass import getuser
+import pictsql
 
 connected_clients = {}
 connected_clients_test = {}
@@ -13,6 +14,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 	"""This handles the server for a multi-user chat client,
 		it allows clients to connect to the server, it handles mainting the server"""
 			
+
 	def handle(self):
 	
 		print("user connected")		
@@ -20,7 +22,11 @@ class TCPHandler(socketserver.BaseRequestHandler):
 		while not self.loggedin:
 			
 			data = self.request.recv(1024).decode("utf-8")
-			check_header(data)
+			if len(data) < 5:
+				pass
+			else:
+				print(data)
+				check_header(data)
 		
 		
 		self.client_join(self.client_username)
@@ -55,12 +61,13 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
 	def check_header(self, data):
 		
-		splitted_data = data.split("*")
+		splitted_data = data.split("^")
 		
 		header = splitted_data[0]
 		
 		if header == 'Registration':
-			pass
+			field_data = splitted_data[1].split("|")
+			
 		elif header == 'Login':
 			pass
 #		elif header = 'Guess':
@@ -165,5 +172,5 @@ def server_start(host, port):
 		server.shutdown()
 		sys.exit("Client closed.")
 
-server_start('127.0.0.1', 2400)			
+server_start('127.0.0.1', 2600)			
 

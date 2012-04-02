@@ -1,29 +1,34 @@
 from tkinter import *
 from tkinter.messagebox import showwarning as errorbox
 from tkinter.messagebox import showinfo as infobox
-import os, sys, time
+import os, sys, time, threading
 from PictClient import ClientConnection
 
-class ServerWindow():
+global ClientConnnected
+ClientConnected = False
 
-	def __init__(self):
-	
-		self.frame = Tk()
-		self.frame.title("Python Pictionary")
+class ServerWindow(Frame):
+
+	def __init__(self, master=None):
+
+		Frame.__init__(self, master)
+		self.grid()
+		self.master.title("Python Pictionary")
 		self.connected = False		
 		self.make_widgets()	
 		
 	def make_widgets(self):	
 		
-		self.Address = Entry(self.frame, text='127.0.0.1')
-		self.Port = Entry(self.frame)
+		self.Address = Entry(self)
+		self.Address.insert(0, '127.0.0.1')
+		self.Port = Entry(self)
 				
-		self.Submit = Button(self.frame, text='Submit', command=self.submit)
-		self.Clear = Button( self.frame, text='Clear', command=self.clear)
+		self.Submit = Button(self, text='Submit', command=self.submit)
+		self.Clear = Button( self, text='Clear', command=self.clear)
 		#L... is the label equivilant to the entry (text box)
 		
-		self.LAddress = Label(self.frame,text="Sever Address:")
-		self.LPort = Label(self.frame,text="Sever port:")
+		self.LAddress = Label(self,text="Sever Address:")
+		self.LPort = Label(self,text="Sever port:")
 		
 		self.Address.grid(row=0, column=1)
 		self.Port.grid(row=1, column=1)
@@ -37,50 +42,65 @@ class ServerWindow():
 	
 		self.Address.delete(0, END)
 		self.Port.delete(0, END)
+		a = LoginWindow()
+		a.mainloop()
+		self.quit()
 		
 	def submit(self):
 		
-#		try:		
 		self.EAddress = self.Address.get()
 		self.EPort = int(self.Port.get())
 
 		while not self.connected:
-			client_socket = ClientConnection()			
-			client_socket.easy_host = self.EAddress
-			client_socket.host_port = self.EPort
-			client_socket.daemon = True
+			self.client_socket = ClientConnection()			
+			self.client_socket.easy_host = self.EAddress
+			self.client_socket.host_port = self.EPort
+			self.client_socket.daemon = True
 			try:
-				client_socket.start()
+				self.client_socket.start()
 				self.connected = True
 				print("conncncn")
 				time.sleep(1)
-
 			except ValueError:	
 				errorbox("Unable to connect", "Please check the server address/port is correct and/or you are connected to the internet")
-
-class RegistrationWindow():
-
-	def __init__(self):
+		
+		self.quit()
+		self.Registration = RegistrationWindow()		
+		while True:
 	
-		self.frame = Tk()
-		self.frame.title("Registration form")		
+			if self.Registration.completed == True:
+				self.client_socket.send_data(self.Registration.data)
+				break
+			else:
+				pass
+
+class RegistrationWindow(Frame, threading.Thread):
+
+	def __init__(self, master=None):
+		
+		print("Ping")
+		Frame.__init__(self, master)
+		print("Where?")
+		self.grid()
+		self.completed = False
+		self.master.title("Registration form")		
 		self.make_widgets()
 		
 		
 	def make_widgets(self):	
 		
-		self.Nickname = Entry(self.frame)
-		self.Username = Entry(self.frame)
-		self.Password = Entry(self.frame, show="*")
-		self.Email = Entry(self.frame)
-		self.Submit = Button(self.frame, text='Submit', command=self.submit)
-		self.Clear = Button( self.frame, text='Clear', command=self.clear)
+		self.Nickname = Entry(self)
+		self.Username = Entry(self)
+		self.Password = Entry(self, show="*")
+		self.Email = Entry(self)
+		self.Submit = Button(self, text='Submit', command=self.submit)
+		self.Clear = Button( self, text='Clear', command=self.clear)
 		#L... is the label equivilant to the entry (text box)
 		
-		self.LNickname = Label(self.frame,text="Nickname:")
-		self.LUsername = Label(self.frame,text="Username:")
-		self.LPassword = Label(self.frame,text="Password:")
-		self.LEmail = Label(self.frame,text="Email")
+		self.LNickname = Label(self,text="Nickname:")
+		self.LUsername = Label(self,text="Username:")
+		self.LPassword = Label(self,text="Password:")
+		self.LEmail = Label(self,text="Email")
 		
 		self.Nickname.grid(row=0, column=1)
 		self.Username.grid(row=1, column=1)
@@ -131,23 +151,24 @@ class RegistrationWindow():
 
 class LoginWindow():
 	
-	def __init__(self):
+	def __init__(self, master=None):
 	
-		self.frame = Tk()
-		self.frame.title("Login form")		
+		Frame.__init__(self, master)
+		self.grid()
+		self.master.title("Login form")		
 		self.make_widgets()
 		
 		
 	def make_widgets(self):	
 		  
-		self.Username = Entry(self.frame)
-		self.Password = Entry(self.frame, show="*")
-		self.Submit = Button(self.frame, text='Submit', command=self.submit)
-		self.Clear = Button( self.frame, text='Clear', command=self.clear)
+		self.Username = Entry(self)
+		self.Password = Entry(self, show="*")
+		self.Submit = Button(self, text='Submit', command=self.submit)
+		self.Clear = Button( self, text='Clear', command=self.clear)
 		#L... is the label equivilant to the entry (text box)
 		
-		self.LUsername = Label(self.frame,text="Username:")
-		self.LPassword = Label(self.frame,text="Password:")
+		self.LUsername = Label(self,text="Username:")
+		self.LPassword = Label(self,text="Password:")
 
 		self.Username.grid(row=1, column=1)
 		self.Password.grid(row=2, column=1)
@@ -177,18 +198,6 @@ class LoginWindow():
 		self.EPassword = self.Password.get().lower()		
 		self.check_entry()
 		
-
-def serverlogin():
-
-	client_socket = ClientConnection()
-	client_socket.easy_host = '127.0.0.1'
-	client_socket.host_port = 2200
-	client_socket.daemon = True
-	client_socket.start()
-	time.sleep(1)
-	connected = True
-	print("Teg")
-
 import pictsql
 #b = pictsql.SQLManager()
 #b.path = './data'
@@ -198,8 +207,7 @@ import pictsql
 
 
 #a = RegistrationWindow()
-#a.frame.mainloop()
+#a.mainloop()
 
-c = ServerWindow()
-print("pung")
-c.frame.mainloop()
+userwindow = ServerWindow()
+userwindow.mainloop()
