@@ -26,7 +26,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 				pass
 			else:
 				print(data)
-				check_header(data)
+				self.check_header(data)
 		
 		
 		self.client_join(self.client_username)
@@ -69,7 +69,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
 			field_data = splitted_data[1].split("|")
 			
 		elif header == 'Login':
-			pass
+			field_data = splitted_data[1].split("|")
+			self.Username, self.Password = field_data
+			print("User {} Password {}".format(self.Username, self.Password))
 #		elif header = 'Guess':
 #			pass
 #		elif header = 'Message':		
@@ -172,5 +174,5 @@ def server_start(host, port):
 		server.shutdown()
 		sys.exit("Client closed.")
 
-server_start('127.0.0.1', 2600)			
+server_start('127.0.0.1', 2500)			
 
