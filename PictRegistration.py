@@ -16,6 +16,7 @@ class ServerWindow(Frame):
 		self.master.title("Python Pictionary")
 		self.connected = False		
 		self.make_widgets()	
+		print(self.winfo_toplevel())
 		
 	def make_widgets(self):	
 		
@@ -51,6 +52,7 @@ class ServerWindow(Frame):
 		self.EAddress = self.Address.get()
 		self.EPort = int(self.Port.get())
 
+
 		while not self.connected:
 			self.client_socket = ClientConnection()			
 			self.client_socket.easy_host = self.EAddress
@@ -59,13 +61,14 @@ class ServerWindow(Frame):
 			try:
 				self.client_socket.start()
 				self.connected = True
+				self.quit()
+				time.sleep(5)
 				print("conncncn")
 				time.sleep(1)
 			except ValueError:	
 				errorbox("Unable to connect", "Please check the server address/port is correct and/or you are connected to the internet")
-		
-		self.quit()
-		self.Registration = RegistrationWindow()		
+
+		self.Registration = RegistrationWindow(self)		
 		while True:
 	
 			if self.Registration.completed == True:
@@ -76,8 +79,9 @@ class ServerWindow(Frame):
 
 class RegistrationWindow(Frame, threading.Thread):
 
-	def __init__(self, master=None):
+	def __init__(self, master):
 		
+
 		print("Ping")
 		Frame.__init__(self, master)
 		print("Where?")
