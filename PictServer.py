@@ -66,12 +66,13 @@ class TCPHandler(socketserver.BaseRequestHandler):
 		header = splitted_data[0]
 		
 		if header == 'Registration':
-			field_data = splitted_data[1].split("|")
+			field_data =splitted_data[1].split("|")
 			
 		elif header == 'Login':
 			field_data = splitted_data[1].split("|")
 			self.Username, self.Password = field_data
 			print("User {} Password {}".format(self.Username, self.Password))
+			b.user_login(self.Username, self.Password)
 #		elif header = 'Guess':
 #			pass
 #		elif header = 'Message':		
@@ -174,5 +175,8 @@ def server_start(host, port):
 		server.shutdown()
 		sys.exit("Client closed.")
 
-server_start('127.0.0.1', 2500)			
+b = pictsql.SQLManager()
+b.path = './data'
+b.main()
+server_start('127.0.0.1', 2600)			
 
