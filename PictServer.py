@@ -186,5 +186,5 @@ def server_start(host, port):
 b = pictsql.SQLManager()
 b.path = './data'
 b.main()
-server_start('127.0.0.1', 2500)			
+server_start('127.0.0.1', 2600)			
 

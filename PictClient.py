@@ -9,7 +9,7 @@ from getpass import getuser
 easy_host = "127.0.0.1"
 max_size = 1024
 socket_connected = True
-global connected
+global connecte
 #connected.loggedin = False
 #connected.failed = False
 
@@ -18,28 +18,28 @@ global connected
 class ClientConnection(threading.Thread):
 	"""This creates a thread off which a client can recieve data from the server"""
 	
+	def __init__(self, handler):
+		
+		threading.Thread.__init__(self)
+		self.handler = handler
+		print(handler)	
+
 	def run(self):
 		
 		global sock 
 		
 		try:
 			
-			
 			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			sock.connect((self.easy_host, self.host_port))		
+			self.handler.connected = True			
 			
-
 		except socket.error as error:
-			print("An error has occured and you have been unable to connect to the host, please try again. ERROR: {}".format(error))
-			global socket_connected
-			socket_connected = False
+			
+			print("Error?")
 			sock.close()
-
-		except (OverflowError, ValueError):
-		
-			print("The chosen port must be between 0-65535, please try again")
-			main()
-
+			self.handler.connected = False
+			return
 				
 		#Now the client can recieve chat messages
 		while True:
@@ -47,26 +47,34 @@ class ClientConnection(threading.Thread):
 			
 				incoming_data = sock.recv(max_size)
 				decoded_data = incoming_data.decode('utf-8')
+
+				if self.handler.loggedin == False:
+
+					if decoded_data == "*loggEdin*":
+						print("Fuck yeh")
+						self.handler.loggedin = True						
+						break
+					elif decoded_data == "*faiLed*":
+						self.handler.failed = True
+						print("Sad Face")
+					elif decoded_data == "***ShUtdOwn***":
+						print("Server shutting down...")
+						sock.close()
+						socket_connected = False
+
+					continue
+
 				if len(incoming_data) == 0:
 					pass
-
-
 				elif decoded_data == "***ShUtdOwn***":
 					print("Server shutting down...")
 					sock.close()
 					socket_connected = False
-				elif decoded_data == "*loggEdin*":
-					print("Fuck yeh")
-					#connected.loggedin = True
-				elif decoded_data == "*faiLed*":
-					#connected.failed = True
-					print("Sad Face")
 				else:
 					print(incoming_data.decode('utf-8'))
 			
 			except socket.error as error:
-				sys.exit("An error has occured, please try to connect to the host again, ERROR: {}".format(error))
-
+				self.handler.warn_exit()
 
 
 	#Sending data, 

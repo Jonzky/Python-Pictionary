@@ -1,8 +1,9 @@
 from tkinter import *
 from tkinter.messagebox import showwarning as errorbox
 from tkinter.messagebox import showinfo as infobox
-import os, sys, time, threading
+import os, sys, time, threading, socket
 from PictClient import ClientConnection
+
 
 global ClientConnnected
 ClientConnected = False
@@ -12,13 +13,22 @@ class UserInterface(Frame):
 	def __init__(self, master=None):
 
 		Frame.__init__(self, master)
+		self.parent = master
 		self.master.title("Python Pictionary")
+		self.loggedin = False
 		self.connected = False
 		self.make_connection()
+		self.master.protocol("WM_DELETE_WINDOW", self.quit)
 	
+	def quit(self):
+	
+		self.parent.quit()
+
 	def make_connection(self):
 
+		self.parent.withdraw()
 		self.connection_window = Toplevel(self)
+		self.connection_window.protocol("WM_DELETE_WINDOW", self.quit)
 		self.Address = Entry(self.connection_window)
 		self.Address.insert(0, '127.0.0.1')
 		self.Port = Entry(self.connection_window)
@@ -40,6 +50,7 @@ class UserInterface(Frame):
 
 		self.connection_window.withdraw()
 		self.login_Window = Toplevel(self)		
+		self.login_Window.protocol("WM_DELETE_WINDOW", self.quit)
 		self.Login_Username = Entry(self.login_Window)
 		self.Login_Password = Entry(self.login_Window, show="*")
 		self.Login_Submit = Button(self.login_Window, text='Submit', command=self.submit_login)
@@ -56,6 +67,8 @@ class UserInterface(Frame):
 
 	def make_registration(self):
 
+		self.Registration_Window = Toplevel(self)		
+		self.Registration.protocol("WM_DELETE_WINDOW", self.quit)
 		self.Nickname = Entry(self)
 		self.Username = Entry(self)
 		self.Password = Entry(self, show="*")
@@ -86,24 +99,39 @@ class UserInterface(Frame):
 
 	def submit_connection(self):
 
+		print(self)
 		self.EAddress = self.Address.get()
-		self.EPort = int(self.Port.get())
+		
+		try:		
+			self.EPort = int(self.Port.get())
+		except:
+			errorbox("Invalid Port", "The port you entered is invalid, please eneter a valid integer")
+			return			
 
-		while not self.connected:
-			self.client_socket = ClientConnection()			
-			self.client_socket.easy_host = self.EAddress
-			self.client_socket.host_port = self.EPort
-			self.client_socket.daemon = True
-			try:
-				self.client_socket.start()
-				self.connected = True
-				time.sleep(3)
-				self
-				self.make_login()
+		self.client_socket = ClientConnection(self)			
+		self.client_socket.easy_host = self.EAddress
+		self.client_socket.host_port = self.EPort
+		self.client_socket.daemon = True
 
-			except ValueError:	
-				errorbox("Unable to connect", "Please check the server address/port is correct and/or you are connected to the internet")
-	
+		try:
+			self.client_socket.start()
+			print("Socket?")
+			#Timer needed otherwise the the threaded functions will not run in time.
+			time.sleep(2.0)			
+			if self.connected == False:
+				print("False")
+				raise ValueError
+			time.sleep(0.5)
+			self.make_login()
+
+		except ValueError:
+			errorbox("Unable to connect", "Please check the server address/port is correct and/or you are connected to the internet")
+			return
+
+	def warn_exit(self):
+			
+		errorbox("An error has occured!", "An error has occured and the program has been forced to shutdown, sorry for the trouble!")
+
 	def submit_login(self):
 
 		self.EUsername = self.Login_Username.get().lower()
@@ -111,7 +139,13 @@ class UserInterface(Frame):
 		data = "{}|{}".format(self.EUsername, self.EPassword)
 		packet = "Login^{}".format(data)
 		print(packet)
-		if not self.client_socket.send_data(packet):
+
+		self.client_socket.send_data(packet)
+		time.sleep(2)
+		if self.loggedin == True:
+			print("Ooooo God yes!")
+			pass
+		else:		
 			errorbox("Invalid login details", "Please check the information is correct, if the issue persists then contact an administrator")					
 
 	def clear_login(self):
@@ -119,5 +153,6 @@ class UserInterface(Frame):
 
 	def clear_connection(self):
 		pass
-a = UserInterface()
+root = Tk()
+a = UserInterface(root)
 a.mainloop()
