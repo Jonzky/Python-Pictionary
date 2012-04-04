@@ -72,7 +72,15 @@ class TCPHandler(socketserver.BaseRequestHandler):
 			field_data = splitted_data[1].split("|")
 			self.Username, self.Password = field_data
 			print("User {} Password {}".format(self.Username, self.Password))
-			b.user_login(self.Username, self.Password)
+			if not b.user_login(self.Username, self.Password):
+
+				failedloggedin = "*faiLed*".encode("utf8")
+				self.request.send(failedloggedin)
+
+			else:
+				loggedin = "*loggEdin*".encode("utf8")
+				self.request.send(loggedin)
+
 #		elif header = 'Guess':
 #			pass
 #		elif header = 'Message':		
@@ -178,5 +186,5 @@ def server_start(host, port):
 b = pictsql.SQLManager()
 b.path = './data'
 b.main()
-server_start('127.0.0.1', 2600)			
+server_start('127.0.0.1', 2500)			
 

@@ -79,7 +79,7 @@ class ServerWindow(Frame):
 
 class RegistrationWindow(Frame, threading.Thread):
 
-	def __init__(self, master):
+	def __init__(self, master=None):
 		
 
 		print("Ping")
@@ -203,15 +203,15 @@ class LoginWindow():
 		self.check_entry()
 		
 import pictsql
-#b = pictsql.SQLManager()
-#b.path = './data'
-#b.main()
+b = pictsql.SQLManager()
+b.path = './data'
+b.main()
 
-#b.field = 'username'
+b.field = 'username'
 
 
-#a = RegistrationWindow()
-#a.mainloop()
+a = RegistrationWindow()
+a.mainloop()
 
-userwindow = ServerWindow()
-userwindow.mainloop()
+#userwindow = ServerWindow()
+#userwindow.mainloop()

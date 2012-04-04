@@ -111,7 +111,8 @@ class UserInterface(Frame):
 		data = "{}|{}".format(self.EUsername, self.EPassword)
 		packet = "Login^{}".format(data)
 		print(packet)
-		self.client_socket.send_data(packet)		
+		if not self.client_socket.send_data(packet):
+			errorbox("Invalid login details", "Please check the information is correct, if the issue persists then contact an administrator")					
 
 	def clear_login(self):
 		pass

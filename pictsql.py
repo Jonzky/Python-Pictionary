@@ -18,7 +18,7 @@ class SQLManager(threading.Thread):
 		
 		self.connection = sqlite3.connect('./data/example', check_same_thread = False)
 		self.con = self.connection.cursor()
-	
+
 	def create_table(self, table):
 		
 		self.con.execute(table)	
@@ -59,25 +59,32 @@ class SQLManager(threading.Thread):
 
 		data = (username, password)
 		exec_str = 'select * from {} where username=? and password=?'.format(self.table)
-		a = self.con.execute(exec_str, data)		
+		self.con.execute(exec_str, data)		
+		a = self.con.fetchall()		
 		if len(a) != 0:
-			for row in a:
-				print(row)
+			print("True")
+			return True
+
 		else:
-			print("nonw")
+			print("False")
+			return False
+			
 def tests():
 
-	user_table = ('''CREATE TABLE IF NOT EXISTS user
+	pass
+
+user_table = ('''CREATE TABLE IF NOT EXISTS user
 (id INTEGER PRIMARY KEY AUTOINCREMENT, 
 username VARCHAR(25) NOT NULL,
 password VARCHAR(25) NOT NULL,
+rank VARCHAR(25) DEFAULT 'member' not NULL,
 timeplayed INTEGER DEFAULT 0 NOT NULL,
-email VARCHAR(25) NOT NULL,1
+email VARCHAR(25) NOT NULL,
 score VARCHAR(25) DEFAULT '0' NOT NULL,
 UNIQUE (username),
 UNIQUE (email))''')
 
-	test_execution = ("""insert into user
+test_execution = ("""insert into user
           values ('usernametest','password1',1,'JonZakay@aol.com',10)""")
 
 

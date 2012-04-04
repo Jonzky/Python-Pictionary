@@ -10,7 +10,8 @@ easy_host = "127.0.0.1"
 max_size = 1024
 socket_connected = True
 global connected
-connected = False
+#connected.loggedin = False
+#connected.failed = False
 
 ##############################################################################################################
 
@@ -45,17 +46,28 @@ class ClientConnection(threading.Thread):
 			try:	
 			
 				incoming_data = sock.recv(max_size)
+				decoded_data = incoming_data.decode('utf-8')
 				if len(incoming_data) == 0:
 					pass
-				elif incoming_data.decode("utf-8") == "***ShUtdOwn***":
+
+
+				elif decoded_data == "***ShUtdOwn***":
 					print("Server shutting down...")
 					sock.close()
 					socket_connected = False
+				elif decoded_data == "*loggEdin*":
+					print("Fuck yeh")
+					#connected.loggedin = True
+				elif decoded_data == "*faiLed*":
+					#connected.failed = True
+					print("Sad Face")
 				else:
 					print(incoming_data.decode('utf-8'))
 			
 			except socket.error as error:
 				sys.exit("An error has occured, please try to connect to the host again, ERROR: {}".format(error))
+
+
 
 	#Sending data, 
 	def send_data(self, data):
@@ -71,7 +83,9 @@ class ClientConnection(threading.Thread):
 			else:	
 				encoded_data = data.encode("utf-8")
 				sock.send(encoded_data)
-				
+			
+			
+					
 		except socket.error as error:
 			
 			sys.exit("An error has occured, please try to connect to the host again, ERROR: {}".format(error))
