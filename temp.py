@@ -35,7 +35,6 @@ class UserInterface(Frame):
 		self.Submit = Button(self.connection_window, text='Submit', command=self.submit_connection)
 		self.Clear = Button( self.connection_window, text='Clear', command=self.clear_connection)
 		#L... is the label equivilant to the entry (text box)
-		
 		self.LAddress = Label(self.connection_window,text="Sever Address:")
 		self.LPort = Label(self.connection_window,text="Sever port:")
 		
@@ -55,11 +54,13 @@ class UserInterface(Frame):
 		self.Login_Password = Entry(self.login_Window, show="*")
 		self.Login_Submit = Button(self.login_Window, text='Submit', command=self.submit_login)
 		self.Login_Clear = Button(self.login_Window, text='Clear', command=self.clear_login)
+		self.CreateAccount = Button(self.login_Window, text='Create a account', command=self.make_registration)
 		self.LUsername = Label(self.login_Window,text="Username:")
 		self.LPassword = Label(self.login_Window,text="Password:")
 		self.Login_Username.grid(row=1, column=1)
 		self.Login_Password.grid(row=2, column=1)
 		self.LUsername.grid(row=1, column=0)
+		self.CreateAccount.grid(row=2, column=3)
 		self.LPassword.grid(row=2, column=0)
 		self.Login_Clear.grid(row=1, column=2)
 		self.Login_Submit.grid(row=2, column=2)
@@ -67,18 +68,22 @@ class UserInterface(Frame):
 
 	def make_registration(self):
 
-		self.Registration_Window = Toplevel(self)		
-		self.Registration.protocol("WM_DELETE_WINDOW", self.quit)
-		self.Nickname = Entry(self)
-		self.Username = Entry(self)
-		self.Password = Entry(self, show="*")
-		self.Email = Entry(self)
-		self.Submit = Button(self, text='Submit', command=self.submit_reigistration)
-		self.Clear = Button( self, text='Clear', command=self.clear_registration)
-		self.LNickname = Label(self,text="Nickname:")
-		self.LUsername = Label(self,text="Username:")
-		self.LPassword = Label(self,text="Password:")
-		self.LEmail = Label(self,text="Email")
+		self.login_Window.withdraw()
+
+		self.Registration_Window = Toplevel(self.login_Window)		
+		self.Registration_Window.protocol("WM_DELETE_WINDOW", self.quit)
+
+		self.Nickname = Entry(self.Registration_Window)
+		self.Username = Entry(self.Registration_Window)
+		self.Password = Entry(self.Registration_Window, show="*")
+		self.Email = Entry(self.Registration_Window)
+		print("Test")
+		self.Submit = Button(self.Registration_Window, text='Submit', command=self.submit_registration)
+		self.Clear = Button(self.Registration_Window, text='Clear', command=self.clear_registration)
+		self.LNickname = Label(self.Registration_Window,text="Nickname:")
+		self.LUsername = Label(self.Registration_Window,text="Username:")
+		self.LPassword = Label(self.Registration_Window,text="Password:")
+		self.LEmail = Label(self.Registration_Window,text="Email")
 		self.Nickname.grid(row=0, column=1)
 		self.Username.grid(row=1, column=1)
 		self.Password.grid(row=2, column=1)
@@ -96,6 +101,8 @@ class UserInterface(Frame):
 		self.EUsername = self.Username.get().lower()
 		self.EPassword = self.Password.get().lower()
 		self.EEmail = self.Email.get().lower()
+		self.Registration_Window.withdraw()
+		self.login_Window.deiconify()
 
 	def submit_connection(self):
 
@@ -152,6 +159,8 @@ class UserInterface(Frame):
 		pass
 
 	def clear_connection(self):
+		pass
+	def clear_registration(self):
 		pass
 root = Tk()
 a = UserInterface(root)
