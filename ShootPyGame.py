@@ -1,5 +1,5 @@
 
-import pygame, random, math
+import pygame, random, math, UDPClient
 from time import clock as clocky
 # image from http://www.frambozenbier.org/index.php/raspi-community-news/20167-antiloquax-on-getting-stuck-in-to-python
 
@@ -10,15 +10,22 @@ class Bullet(pygame.sprite.Sprite):
 		super().__init__()
 		width, hieght = screen.get_size()
 		self.image = pygame.image.load('shot.png').convert()
+		self.orginal_image = self.image
 		self.master = master
 		self.lifetime = 10
 		self.direction = self.master.direction
 		self.rect = self.image.get_rect()
 		self.rect.centerx = self.master.rect.centerx+5
 		self.rect.centery = self.master.rect.centery+5
-	
-		self.image = pygame.transform.rotate(self.image, self.direction)
+
+		self.udp_client = UDPClient.ClientUDP()
+		self.udp_client.daemon = True
+		self.udp_client.start()		
+		
+		self.image = pygame.transform.rotate(self.orginal_image, self.direction)
 		self.rect = self.image.get_rect(center=self.rect.center)					
+
+		self.server_update(True)
 
 	def update(self):
 
@@ -31,6 +38,16 @@ class Bullet(pygame.sprite.Sprite):
 #			self.rect = self.image.get_rect(center=self.rect.center)						
 #			if self.gospeed > 0:
 #				self.slowdown()
+		#self.server_update()
+
+
+	def server_update(self, new=False):
+		
+		if new == True:
+			self.udp_client.update_position(3, self.rect.centerx, self.rect.centery, 0, self.direction)
+		else:
+			pass
+#			self.udp_client.update_position(1, 0, self.direction)	
 				
 	def timer(self):
 
@@ -56,26 +73,24 @@ class Arrow(pygame.sprite.Sprite):
 		width, hieght = screen.get_size()
 		self.direction = 0
 		self.gospeed = 0
-		self.moving_image = pygame.image.load('test.png').convert()
-		self.not_moving_image = pygame.image.load('test.png').convert()
-		self.image = self.not_moving_image
-
+		self.image = pygame.image.load('test.png').convert()
 		background = self.image.get_at((0, 0))
-		self.image.set_colorkey(background)
-		self.moving_image.set_colorkey(background)
-		self.not_moving_image.set_colorkey(background)		
-		
+		self.image.set_colorkey(background)		
 		self.rect = self.image.get_rect()
 		self.rect.centerx = width-10
 		self.rect.centery = hieght-10
 		self.original = self.image
 
+		self.udp_client = UDPClient.ClientUDP()
+		self.udp_client.daemon = True
+		self.udp_client.start()		
+		self.server_update(True)
+
 	def update(self):
 
 		keys = pygame.key.get_pressed()
 		if not keys[pygame.K_UP]:	
-			self.image = self.not_moving_image
-			self.image = pygame.transform.rotate(self.not_moving_image, self.direction)
+			self.image = pygame.transform.rotate(self.original, self.direction)
 			self.rect = self.image.get_rect(center=self.rect.center)						
 			if self.gospeed > 0:
 				self.slowdown()
@@ -90,7 +105,7 @@ class Arrow(pygame.sprite.Sprite):
 			self.rect = self.image.get_rect(center=self.rect.center)			
 		if keys[pygame.K_UP]:
 			self.gospeed += 0.05
-			self.image = pygame.transform.rotate(self.moving_image, self.direction)
+			self.image = pygame.transform.rotate(self.original, self.direction)
 			self.rect = self.image.get_rect(center=self.rect.center)						
 			self.move()
 		if keys[pygame.K_SPACE]:
@@ -100,7 +115,16 @@ class Arrow(pygame.sprite.Sprite):
 				time = str(clocky())
 				time = Bullet(self)
 				bullets.add(time)
-			
+				
+		self.server_update()		
+	
+	def server_update(self, new=False):
+		
+		if new == True:
+			self.udp_client.update_position(4, self.rect.centerx, self.rect.centery, 0, self.direction)
+		else:
+			self.udp_client.update_position(2, self.rect.centerx, self.rect.centery, self.gospeed, self.direction)	
+					
 			
 	def transform(self):
 		pass
@@ -116,6 +140,9 @@ class Arrow(pygame.sprite.Sprite):
 		radian_angle = math.radians(self.direction)
 		self.rect.centerx += (speeed*(math.cos(radian_angle)))
 		self.rect.centery -= (speeed*(math.sin(radian_angle)))			
+	
+	
+
 	
 pygame.init()
 
@@ -136,7 +163,6 @@ running = True
 
 while running:
 	clock.tick(30)
-
 	for event in pygame.event.get():
 		if event.type == pygame.QUIT:
 			running = False
@@ -149,3 +175,5 @@ while running:
 	bullets.draw(screen)
 	
 	pygame.display.flip()
+
+	
