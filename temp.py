@@ -5,7 +5,7 @@ import os, sys, time, threading, socket
 from PictClient import ClientConnection
 
 
-global ClientConnnected
+global ClientConnnected, username
 ClientConnected = False
 
 class UserInterface(Frame):
@@ -159,6 +159,10 @@ class UserInterface(Frame):
 		time.sleep(2)
 		if self.loggedin == True:
 			print("Ooooo God yes!")
+			username = self.EUsername
+			self.quit()
+			
+			
 			pass
 		else:		
 			errorbox("Invalid login details", "Please check the information is correct, if the issue persists then contact an administrator")					

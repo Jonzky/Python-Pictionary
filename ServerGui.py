@@ -6,6 +6,8 @@ from time import clock as clocky
 
 clients = []
 
+global connected_clients
+
 class Bullet(pygame.sprite.Sprite):
 
 	def __init__(self, direction, x, y):
@@ -93,8 +95,7 @@ class UDPHandler(socketserver.BaseRequestHandler):
 
 	def handle(self):
         
-		print("Ping -- ", self)
-		print(self.request)
+
 #		if not self.client_address in clients:
 		
 #			clients[self.client_address[1]] = False
@@ -102,7 +103,7 @@ class UDPHandler(socketserver.BaseRequestHandler):
 		data = self.request[0].strip().decode('utf8')
 		socket = self.request[1]
 		
-#		self.proccess_data(data)
+		self.proccess_data(data)
 		
 #		print("{} wrote:".format(self.client_address[0]))
 #		print(data)
@@ -111,22 +112,23 @@ class UDPHandler(socketserver.BaseRequestHandler):
 		
 		stripped_data = data.split('*')
 #		stringa = "{}*{}*{}*{}*{}".format(type, x, y, speed, direction).encode('utf8')		
-		print(stripped_data[0])
+		print(stripped_data[5])
 
-		stripped_data[0] = int(stripped_data[0])
+		stripped_data[0] = str(stripped_data[0])
+		stripped_data[5] = int(stripped_data[5])
 		stripped_data[4] = float(stripped_data[4])
 		stripped_data[3] = float(stripped_data[3])
 		stripped_data[1] = int(stripped_data[1])
 		stripped_data[2] = int(stripped_data[2])
 
-		if stripped_data[0] == 3:
+		if stripped_data[5] == 3:
 			a = Bullet(stripped_data[4], stripped_data[1], stripped_data[2])
 			bullets.add(a)
-		elif stripped_data[0] == 4:
+		elif stripped_data[5] == 4:
 			a = Arrow(stripped_data[4], stripped_data[1], stripped_data[2])
 			arrows.add(a)
 #			clients[self.client_address] = True
-		elif stripped_data[0] == 2:
+		elif stripped_data[5] == 2:
 		
 #			if clients[self.client_address] == False:
 #				pass		
@@ -138,45 +140,57 @@ class UDPHandler(socketserver.BaseRequestHandler):
 class ThreadedUDP(socketserver.ThreadingMixIn, socketserver.UDPServer):
 	pass	
 	
-#def start(threading.Thread):
-def start():		
-	pygame.init()	
-	size = (700, 540)
-	global screen
-	screen = pygame.display.set_mode(size)
-	pygame.display.set_caption('Shooting test')
 
-	background = pygame.Surface(size).convert()
-	background.fill((160, 160, 160))
-	screen.blit(background, (0, 0))
+class start(threading.Thread):
+#def start():		
 
+	def __init__(self, address, port):
 	
-	global bullets, arrows
-	arrows = pygame.sprite.Group()
-	bullets = pygame.sprite.Group()
-
-
-	clock = pygame.time.Clock()
-	running = True
-
-	server_start('127.0.0.1', 2600)
-
-	while running:
+		super().__init__()
+		self.daemon = False
+		self.start()
+		self.address, self.port = address, port
 		
-		clock.tick(30)
-		
-		
-		for event in pygame.event.get():
-			if event.type == pygame.QUIT:
-				running = False
-		arrows.clear(screen, background)
-		arrows.update()
-		arrows.draw(screen)
-		bullets.clear(screen, background)
-		bullets.update()
-		bullets.draw(screen)
-		pygame.display.flip()
 
+	def run(self):
+		
+		print("ASDASD2")
+		pygame.init()	
+		size = (700, 540)
+		global screen
+		screen = pygame.display.set_mode(size)
+		pygame.display.set_caption('Shooting test')
+
+		background = pygame.Surface(size).convert()
+		background.fill((160, 160, 160))
+		screen.blit(background, (0, 0))
+	
+		global bullets, arrows
+		arrows = pygame.sprite.Group()
+		bullets = pygame.sprite.Group()
+
+		clock = pygame.time.Clock()
+		running = True
+		
+		server_start(self.address, self.port)
+		
+		
+		while running:		
+
+			clock.tick(30)	
+
+			for event in pygame.event.get():
+				if event.type == pygame.QUIT:
+					running = False
+
+			arrows.clear(screen, background)
+			arrows.update()
+			arrows.draw(screen)
+			bullets.clear(screen, background)
+			bullets.update()
+			bullets.draw(screen)
+			pygame.display.flip()
+	
 
 
 def server_start(host, port):
@@ -194,6 +208,6 @@ def server_start(host, port):
 	
 	print('Running; type !quit to stop...')
 
-start()		
+#start()		
 #start().daemon = True
 #start().start()

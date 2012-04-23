@@ -1,7 +1,7 @@
 ### This is a very basic implementation to ensure the User/SQL queries are handled correctly
 ### Prior to incorparating the GUI in PyGame
 
-import socket, socketserver, threading, sys, time
+import socket, socketserver, threading, sys, time, ShootPyGame
 from datetime import datetime
 from getpass import getuser
 
@@ -9,7 +9,6 @@ from getpass import getuser
 easy_host = "127.0.0.1"
 max_size = 1024
 socket_connected = True
-global connecte
 #connected.loggedin = False
 #connected.failed = False
 
@@ -31,11 +30,14 @@ class ClientConnection(threading.Thread):
 			
 			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			sock.connect((self.easy_host, self.host_port))		
-			self.handler.connected = True			
+			self.handler.connected = True
+			global address, port
+			address, port = self.easy_host, self.host_port			
 			
 		except socket.error as error:
 			
 			print("Error?")
+			print(error)
 			sock.close()
 			self.handler.connected = False
 			return
@@ -45,27 +47,32 @@ class ClientConnection(threading.Thread):
 			try:	
 			
 				incoming_data = sock.recv(max_size)
-				decoded_data = incoming_data.decode('utf-8')
+
 
 				if self.handler.loggedin == False:
 
-					if decoded_data == "*loggEdin*":
+					decoded_data = incoming_data.decode('utf-8').split("^")
+
+					if decoded_data[0] == "*loggEdin*":
 						print("Fuck yeh")
+						randomint = decoded_data[1]
 						self.handler.loggedin = True
-						break
-					elif decoded_data == "*faiLed*":
+						a = ShootPyGame.start(address, port, randomint)
+					elif decoded_data[0] == "*faiLed*":
 						self.handler.failed = True
 						print("Sad Face")
-					elif decoded_data == "***ShUtdOwn***":
+					elif decoded_data[0] == "***ShUtdOwn***":
 						print("Server shutting down...")
 						sock.close()
 						socket_connected = False
-					elif decoded_data == "***UsernAmeuSed***":
+					elif decoded_data[0] == "***UsernAmeuSed***":
 						print("username used")
-					elif decoded_data == "***EmailtAken***":
+					elif decoded_data[0] == "***EmailtAken***":
 						print("email used...")
 
 					continue
+
+				decoded_data = incoming_data.decode('utf-8')
 
 				if len(incoming_data) == 0:
 					pass
@@ -83,7 +90,6 @@ class ClientConnection(threading.Thread):
 	#Sending data, 
 	def send_data(self, data):
 		"""Function that sends the clients data"""
-	
 		try:
 			if not socket_connected:
 				pass

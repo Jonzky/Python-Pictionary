@@ -8,24 +8,39 @@ clients = []
 
 class ClientUDP(threading.Thread):
 
-#	def __init__(self):
-#		
-#		super().__init__()
+	def __init__(self, host, port):
 		
-		
+		super().__init__()
+		self.daemon = True
+		self.start()
+		self.host = host
+		self.port = port
+				
+
+
 
 	def run(self):
 	
 		print("ping")
 	
-		HOST, PORT = "localhost", 9999
-
-		self.host = '127.0.0.1'
-		self.port = 2500
 
 		# SOCK_DGRAM is the socket type to use for UDP sockets
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		
+		
+		while True:
+				
+			incoming_data = self.sock.recv(1024)
+	
+			if len(incoming_data) == 0:
+				pass
+			elif incoming_data.decode("utf-8") == "***ShUtdOwn***":
+				print("Server shutting down...")
+				self.sock.close()
+			else:
+				
+				print(incoming_data.decode('utf-8'))
+				process_data(incoming_data.decode('utf-8'))
 
 		# As you can see, there is no connect() call; UDP has no connections.
 		# Instead, data is directly sent to the recipient via sendto().
@@ -34,20 +49,39 @@ class ClientUDP(threading.Thread):
 
 #		print "Sent:     {}".format(data)
 #		print "Received: {}".format(received)
-		
 
-	def update_position(self, type, x, y, speed, direction):
-		
 
-		self.host = '127.0.0.1'
-		self.port = 2600
+	def process_data(self, data):
+	
+		stripped_data = data.split('*')
+#		stringa = "{}*{}*{}*{}*{}".format(type, x, y, speed, direction).encode('utf8')		
+		print(stripped_data[0])
+
+
+		stripped_data[0] = int(stripped_data[0])
+		stripped_data[4] = float(stripped_data[4])
+		stripped_data[3] = float(stripped_data[3])
+		stripped_data[1] = int(stripped_data[1])
+		stripped_data[2] = int(stripped_data[2])
+
+		if stripped_data[0] == 3:
+			a = Bullet(stripped_data[4], stripped_data[1], stripped_data[2])
+			bullets.add(a)
+		elif stripped_data[0] == 4:
+			a = Arrow(stripped_data[4], stripped_data[1], stripped_data[2])
+			arrows.add(a)
+#			clients[self.client_address] = True
+		elif stripped_data[0] == 2:
+			pass		
+
+	def update_position(self, username, x, y, speed, direction, type):
 		
 		
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 #		print(self.sock)
 	
 
-		stringa = "{}*{}*{}*{}*{}".format(type, x, y, speed, direction).encode('utf8')
+		stringa = "{}*{}*{}*{}*{}*{}".format(username, x, y, speed, direction, type).encode('utf8')
 #		print('1')
 	
 		
