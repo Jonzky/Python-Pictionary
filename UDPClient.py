@@ -3,7 +3,7 @@ from datetime import datetime
 from getpass import getuser
 import pictsql
 
-
+arrow_dict = {}
 clients = []
 
 class ClientUDP(threading.Thread):
@@ -68,8 +68,8 @@ class ClientUDP(threading.Thread):
 			a = Bullet(stripped_data[4], stripped_data[1], stripped_data[2])
 			bullets.add(a)
 		elif stripped_data[0] == 4:
-			a = Arrow(stripped_data[4], stripped_data[1], stripped_data[2])
-			arrows.add(a)
+			arrow_dict[stripped_data[0]] = Arrow(stripped_data[4], stripped_data[1], stripped_data[2])
+			arrows.add(arrow_dict[stripped_data[0]])
 #			clients[self.client_address] = True
 		elif stripped_data[0] == 2:
 			pass		

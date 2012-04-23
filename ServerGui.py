@@ -5,6 +5,7 @@ from time import clock as clocky
 
 
 clients = []
+arrow_dict = {}
 
 global connected_clients
 
@@ -52,7 +53,6 @@ class Arrow(pygame.sprite.Sprite):
 	
 		super().__init__()
 		self.clock = clocky()
-
 		self.direction = direction
 		self.gospeed = 0
 		self.image = pygame.image.load('test.png').convert()
@@ -63,15 +63,15 @@ class Arrow(pygame.sprite.Sprite):
 		self.rect.centerx = x
 		self.rect.centery = y
 		self.original = self.image
+		self.olddirection = self.direction
 
 	def update(self):	
 		
 		self.move()
 
-	def update_pos(self, speed, direction):
+	def update_pos(self, centerx, centery, gospeed, direction):
 		
-		self.gospeed = speed
-		self.direction = direction			
+		self.rect.centerx, self.rect.centery, self.gospeed, self.direction = centerx, centery, gospeed, direction		
 			
 	def transform(self):
 		pass
@@ -82,12 +82,19 @@ class Arrow(pygame.sprite.Sprite):
 		self.move()
 		
 	def move(self):
-
-		speeed = math.exp(self.gospeed)
-		radian_angle = math.radians(self.direction)
-		self.rect.centerx += (speeed*(math.cos(radian_angle)))
-		self.rect.centery -= (speeed*(math.sin(radian_angle)))			
-	
+		
+		if self.gospeed <= 0:
+			pass
+		else:
+				
+			speeed = math.exp(self.gospeed)
+			radian_angle = math.radians(self.direction)
+			self.rect.centerx += (speeed*(math.cos(radian_angle)))
+			self.rect.centery -= (speeed*(math.sin(radian_angle)))			
+		if self.direction != self.olddirection:	
+			self.image = pygame.transform.rotate(self.original, self.direction)
+			self.rect = self.image.get_rect(center=self.rect.center)
+		self.olddirection = self.direction									
 class UDPHandler(socketserver.BaseRequestHandler):
 	"""This handles the server for a multi-user chat client,
 		it allows clients to connect to the server, it handles mainting the server"""
@@ -112,7 +119,7 @@ class UDPHandler(socketserver.BaseRequestHandler):
 		
 		stripped_data = data.split('*')
 #		stringa = "{}*{}*{}*{}*{}".format(type, x, y, speed, direction).encode('utf8')		
-		print(stripped_data[5])
+#		print(stripped_data[5])
 
 		stripped_data[0] = str(stripped_data[0])
 		stripped_data[5] = int(stripped_data[5])
@@ -125,16 +132,16 @@ class UDPHandler(socketserver.BaseRequestHandler):
 			a = Bullet(stripped_data[4], stripped_data[1], stripped_data[2])
 			bullets.add(a)
 		elif stripped_data[5] == 4:
-			a = Arrow(stripped_data[4], stripped_data[1], stripped_data[2])
-			arrows.add(a)
-#			clients[self.client_address] = True
+			global arrows
+			arrow_dict[stripped_data[0]] = Arrow(stripped_data[4], stripped_data[1], stripped_data[2])
+			arrows.add(arrow_dict[stripped_data[0]])
+			print("Added AEEEEOW")
 		elif stripped_data[5] == 2:
-		
+			arrow_dict[stripped_data[0]].update_pos(stripped_data[1], stripped_data[2], stripped_data[3], stripped_data[4])
 #			if clients[self.client_address] == False:
 #				pass		
 #			else:	
 				#a.update_pos(stripped_data[3], stripped_data[4])
-			print(self.request)				
 
 
 class ThreadedUDP(socketserver.ThreadingMixIn, socketserver.UDPServer):

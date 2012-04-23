@@ -9,7 +9,7 @@ import pictsql
 
 
 address = '127.0.0.1'
-port = 2600
+port = 2500
 
 connected_clients = {}
 connected_clients_test = {}

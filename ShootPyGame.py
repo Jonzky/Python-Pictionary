@@ -120,7 +120,7 @@ class Arrow(pygame.sprite.Sprite):
 	def server_update(self, new=False):
 		
 		if new == True:
-			self.udp_client.update_position(randomint, self.rect.centerx, self.rect.centery, 0, self.direction, 4)
+			self.udp_client.update_position(randomint, self.rect.centerx, self.rect.centery, self.gospeed, self.direction, 4)
 		else:
 			self.udp_client.update_position(randomint, self.rect.centerx, self.rect.centery, self.gospeed, self.direction, 2)	
 			
