@@ -7,11 +7,9 @@ from time import clock as clocky
 clients = []
 arrow_dict = {}
 
-global connected_clients
-
 class Bullet(pygame.sprite.Sprite):
 
-	def __init__(self, direction, x, y):
+	def __init__(self, master, direction, x, y, user):
 
 		super().__init__()
 
@@ -23,12 +21,14 @@ class Bullet(pygame.sprite.Sprite):
 		self.rect.centery = y
 		self.image = pygame.transform.rotate(self.image, self.direction)
 		self.rect = self.image.get_rect(center=self.rect.center)					
+		self.master = master
+		self.user = user
+		
 
 	def update(self):
 
 		self.move()
 		self.timer()
-		self.update_client()
 				
 	def timer(self):
 
@@ -43,13 +43,9 @@ class Bullet(pygame.sprite.Sprite):
 		self.rect.centerx += (10*(math.cos(radian_angle)))
 		self.rect.centery -= (10*(math.sin(radian_angle)))
 	
-	def update_client(self):
-	
-		pass		
-
 class Arrow(pygame.sprite.Sprite):
 	
-	def __init__(self, direction, x, y):
+	def __init__(self, master, direction, x, y, user):
 	
 		super().__init__()
 		self.clock = clocky()
@@ -64,10 +60,13 @@ class Arrow(pygame.sprite.Sprite):
 		self.rect.centery = y
 		self.original = self.image
 		self.olddirection = self.direction
+		self.master = master
+		self.user = user
 
 	def update(self):	
 		
 		self.move()
+		self.update_client()
 
 	def update_pos(self, centerx, centery, gospeed, direction):
 		
@@ -95,6 +94,17 @@ class Arrow(pygame.sprite.Sprite):
 			self.image = pygame.transform.rotate(self.original, self.direction)
 			self.rect = self.image.get_rect(center=self.rect.center)
 		self.olddirection = self.direction									
+
+
+	def update_client(self):
+	
+		packet = "CLIENT*{}*{}*{}*{}*{}*2".format(self.user, self.rect.centerx, self.rect.centery, self.gospeed, self.direction).encode('utf8')
+	
+		for address in clients:
+			
+			outgoing_udp.sendto(packet, address)
+
+
 class UDPHandler(socketserver.BaseRequestHandler):
 	"""This handles the server for a multi-user chat client,
 		it allows clients to connect to the server, it handles mainting the server"""
@@ -102,47 +112,60 @@ class UDPHandler(socketserver.BaseRequestHandler):
 
 	def handle(self):
         
+		clients_first = []
 
-#		if not self.client_address in clients:
-		
-#			clients[self.client_address[1]] = False
-		
+		if not self.client_address[0] in clients_first:
+			clients_first.append(self.client_address[0])
+				
+			if not self.client_address in clients:
+				clients.append(self.client_address)		
+			
 		data = self.request[0].strip().decode('utf8')
-		socket = self.request[1]
 		
-		self.proccess_data(data)
-		
-#		print("{} wrote:".format(self.client_address[0]))
-#		print(data)
-
+		if data.startswith("SERVER"):
+			self.proccess_data(data)
+		else:
+			print("No --  ", data)
 	def proccess_data(self, data):
 		
 		stripped_data = data.split('*')
-#		stringa = "{}*{}*{}*{}*{}".format(type, x, y, speed, direction).encode('utf8')		
-#		print(stripped_data[5])
-
-		stripped_data[0] = str(stripped_data[0])
-		stripped_data[5] = int(stripped_data[5])
-		stripped_data[4] = float(stripped_data[4])
-		stripped_data[3] = float(stripped_data[3])
+		
 		stripped_data[1] = int(stripped_data[1])
+		stripped_data[6] = int(stripped_data[6])
+		stripped_data[5] = float(stripped_data[5])
+		stripped_data[4] = float(stripped_data[4])
 		stripped_data[2] = int(stripped_data[2])
+		stripped_data[3] = int(stripped_data[3])
 
-		if stripped_data[5] == 3:
-			a = Bullet(stripped_data[4], stripped_data[1], stripped_data[2])
+		if stripped_data[6] == 3:
+			a = Bullet(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
 			bullets.add(a)
-		elif stripped_data[5] == 4:
+			
+			packet = "CLIENT*{}*{}*{}*0*{}*3".format(stripped_data[1], stripped_data[2], stripped_data[3], stripped_data[5]).encode('utf8')
+	
+			for address in clients:
+			
+				outgoing_udp.sendto(packet, address)
+			
+			
+		elif stripped_data[6] == 4:
 			global arrows
-			arrow_dict[stripped_data[0]] = Arrow(stripped_data[4], stripped_data[1], stripped_data[2])
-			arrows.add(arrow_dict[stripped_data[0]])
-			print("Added AEEEEOW")
-		elif stripped_data[5] == 2:
-			arrow_dict[stripped_data[0]].update_pos(stripped_data[1], stripped_data[2], stripped_data[3], stripped_data[4])
-#			if clients[self.client_address] == False:
-#				pass		
-#			else:	
-				#a.update_pos(stripped_data[3], stripped_data[4])
 
+			if not stripped_data[1] in arrow_dict:
+				arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
+				arrows.add(arrow_dict[stripped_data[1]])
+				print("Added AEEEEOW")
+		elif stripped_data[6] == 2:
+
+			if stripped_data[1] in arrow_dict:
+		
+				arrow_dict[stripped_data[1]].update_pos(stripped_data[2], stripped_data[3], stripped_data[4], stripped_data[5])
+			
+			else:
+				print("Added AEEEEOW")
+				arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
+				arrows.add(arrow_dict[stripped_data[1]])
+			
 
 class ThreadedUDP(socketserver.ThreadingMixIn, socketserver.UDPServer):
 	pass	
@@ -161,7 +184,7 @@ class start(threading.Thread):
 
 	def run(self):
 		
-		print("ASDASD2")
+
 		pygame.init()	
 		size = (700, 540)
 		global screen
@@ -197,7 +220,6 @@ class start(threading.Thread):
 			bullets.update()
 			bullets.draw(screen)
 			pygame.display.flip()
-	
 
 
 def server_start(host, port):
@@ -209,6 +231,8 @@ def server_start(host, port):
 		udp_server_thread = threading.Thread(target=udp_server.serve_forever)
 		udp_server_thread.daemon = True
 		udp_server_thread.start()
+		global outgoing_udp
+		outgoing_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	except socket.error as error:
 		sys.exit("There has been an error trying to create the server, please try again. - ERROR: {}".format(error))
 	

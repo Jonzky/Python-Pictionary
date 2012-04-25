@@ -32,7 +32,7 @@ class ClientConnection(threading.Thread):
 			sock.connect((self.easy_host, self.host_port))		
 			self.handler.connected = True
 			global address, port
-			address, port = self.easy_host, self.host_port			
+			address, port = self.easy_host, self.host_port
 			
 		except socket.error as error:
 			
@@ -57,7 +57,9 @@ class ClientConnection(threading.Thread):
 						print("Fuck yeh")
 						randomint = decoded_data[1]
 						self.handler.loggedin = True
+						self.handler.quit()									
 						a = ShootPyGame.start(address, port, randomint)
+						self.handler.quit()			
 					elif decoded_data[0] == "*faiLed*":
 						self.handler.failed = True
 						print("Sad Face")
