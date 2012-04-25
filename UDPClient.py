@@ -12,7 +12,7 @@ class ClientUDP(threading.Thread):
 		
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		super().__init__()
-		self.daemon = Truearrow_dict
+		self.daemon = True
 		self.start()
 		self.host = host
 		self.port = port

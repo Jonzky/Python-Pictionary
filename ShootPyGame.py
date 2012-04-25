@@ -1,5 +1,5 @@
 
-import pygame, random, math, threading, socket, time
+import pygame, random, math, threading, socket, time, sys
 from time import clock as clocky
 # image from http://www.frambozenbier.org/index.php/raspi-community-news/20167-antiloquax-on-getting-stuck-in-to-python
 
@@ -327,7 +327,7 @@ class start(threading.Thread):
 		super().__init__()
 		self.daemon = False
 		self.start()
-
+		self.running = True
 	
 	def run(self):
 	
@@ -356,13 +356,17 @@ class start(threading.Thread):
 	
 	
 		clock = pygame.time.Clock()
-		running = True
+		
 	
-		while running:
+		while self.running:
 			clock.tick(30)
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
-					running = False
+					
+					print('ping')
+#					self.destroy()
+					sys.exit("UEUUE")
+					self.running = False
 	
 			arrows.clear(screen, background)
 			arrows.update()

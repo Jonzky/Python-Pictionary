@@ -1,35 +1,46 @@
 from tkinter import *
 from tkinter.messagebox import showwarning as errorbox
 from tkinter.messagebox import showinfo as infobox
-import os, sys, time, threading
+import os, sys, time, threading, socket
 from PictClient import ClientConnection
 
-global ClientConnnected
+
+global ClientConnnected, username
 ClientConnected = False
 
-class ServerWindow(Frame):
+class UserInterface(Frame):
 
 	def __init__(self, master=None):
 
 		Frame.__init__(self, master)
-		self.grid()
+		self.parent = master
 		self.master.title("Python Pictionary")
-		self.connected = False		
-		self.make_widgets()	
-		print(self.winfo_toplevel())
-		
-	def make_widgets(self):	
-		
-		self.Address = Entry(self)
+		self.loggedin = False
+		self.connected = False
+		self.make_connection()
+		self.registration_success = True
+		self.registration_failed = False
+		self.registration_failed_username = False
+		self.registration_failed_email = False
+		self.master.protocol("WM_DELETE_WINDOW", self.quit)
+	
+	def quit(self):
+	
+		self.parent.quit()
+
+	def make_connection(self):
+
+		self.parent.withdraw()
+		self.connection_window = Toplevel(self)
+		self.connection_window.protocol("WM_DELETE_WINDOW", self.quit)
+		self.Address = Entry(self.connection_window)
 		self.Address.insert(0, '127.0.0.1')
-		self.Port = Entry(self)
-				
-		self.Submit = Button(self, text='Submit', command=self.submit)
-		self.Clear = Button( self, text='Clear', command=self.clear)
+		self.Port = Entry(self.connection_window)
+		self.Submit = Button(self.connection_window, text='Submit', command=self.submit_connection)
+		self.Clear = Button( self.connection_window, text='Clear', command=self.clear_connection)
 		#L... is the label equivilant to the entry (text box)
-		
-		self.LAddress = Label(self,text="Sever Address:")
-		self.LPort = Label(self,text="Sever port:")
+		self.LAddress = Label(self.connection_window,text="Sever Address:")
+		self.LPort = Label(self.connection_window,text="Sever port:")
 		
 		self.Address.grid(row=0, column=1)
 		self.Port.grid(row=1, column=1)
@@ -38,180 +49,138 @@ class ServerWindow(Frame):
 		self.Submit.grid(row=0, column=2)
 		self.Clear.grid(row=1, column=2)
 
-	
-	def clear(self):
-	
-		self.Address.delete(0, END)
-		self.Port.delete(0, END)
-		a = LoginWindow()
-		a.mainloop()
-		self.quit()
-		
-	def submit(self):
-		
-		self.EAddress = self.Address.get()
-		self.EPort = int(self.Port.get())
+	def make_login(self):
+
+		self.connection_window.withdraw()
+		self.login_Window = Toplevel(self)		
+		self.login_Window.protocol("WM_DELETE_WINDOW", self.quit)
+		self.Login_Username = Entry(self.login_Window)
+		self.Login_Password = Entry(self.login_Window, show="*")
+		self.Login_Submit = Button(self.login_Window, text='Submit', command=self.submit_login)
+		self.Login_Clear = Button(self.login_Window, text='Clear', command=self.clear_login)
+		self.CreateAccount = Button(self.login_Window, text='Create an account', command=self.make_registration)
+		self.LUsername = Label(self.login_Window,text="Username:")
+		self.LPassword = Label(self.login_Window,text="Password:")
+		self.LTitle = Label(self.login_Window, text='Login Form:')
+		self.Login_Username.grid(row=1, column=1)
+		self.Login_Password.grid(row=2, column=1)
+		self.LUsername.grid(row=1, column=0)
+		self.CreateAccount.grid(row=3, column=1)
+		self.LPassword.grid(row=2, column=0)
+		self.LTitle.grid(row=0, column=1)
+		self.Login_Clear.grid(row=1, column=2)
+		self.Login_Submit.grid(row=2, column=2)
 
 
-		while not self.connected:
-			self.client_socket = ClientConnection()			
-			self.client_socket.easy_host = self.EAddress
-			self.client_socket.host_port = self.EPort
-			self.client_socket.daemon = True
-			try:
-				self.client_socket.start()
-				self.connected = True
-				self.quit()
-				time.sleep(5)
-				print("conncncn")
-				time.sleep(1)
-			except ValueError:	
-				errorbox("Unable to connect", "Please check the server address/port is correct and/or you are connected to the internet")
+	def make_registration(self):
 
-		self.Registration = RegistrationWindow(self)		
-		while True:
-	
-			if self.Registration.completed == True:
-				self.client_socket.send_data(self.Registration.data)
-				break
-			else:
-				pass
+		self.login_Window.withdraw()
 
-class RegistrationWindow(Frame, threading.Thread):
-
-	def __init__(self, master=None):
-		
-
-		print("Ping")
-		Frame.__init__(self, master)
-		print("Where?")
-		self.grid()
-		self.completed = False
-		self.master.title("Registration form")		
-		self.make_widgets()
-		
-		
-	def make_widgets(self):	
-		
-		self.Nickname = Entry(self)
-		self.Username = Entry(self)
-		self.Password = Entry(self, show="*")
-		self.Email = Entry(self)
-		self.Submit = Button(self, text='Submit', command=self.submit)
-		self.Clear = Button( self, text='Clear', command=self.clear)
-		#L... is the label equivilant to the entry (text box)
-		
-		self.LNickname = Label(self,text="Nickname:")
-		self.LUsername = Label(self,text="Username:")
-		self.LPassword = Label(self,text="Password:")
-		self.LEmail = Label(self,text="Email")
-		
+		self.Registration_Window = Toplevel(self.login_Window)		
+		self.Registration_Window.protocol("WM_DELETE_WINDOW", self.quit)
+		self.Nickname = Entry(self.Registration_Window)
+		self.Username = Entry(self.Registration_Window)
+		self.Password = Entry(self.Registration_Window, show="*")
+		self.Email = Entry(self.Registration_Window)
+		self.Submit = Button(self.Registration_Window, text='Submit', command=self.submit_registration)
+		self.Clear = Button(self.Registration_Window, text='Clear', command=self.clear_registration)
+		self.Cancel = Button(self.Registration_Window,text='Cancel', command=self.cancel_registration)
+		self.LNickname = Label(self.Registration_Window,text="Nickname:")
+		self.LUsername = Label(self.Registration_Window,text="Username:")
+		self.LPassword = Label(self.Registration_Window,text="Password:")
+		self.LEmail = Label(self.Registration_Window,text="Email")
 		self.Nickname.grid(row=0, column=1)
 		self.Username.grid(row=1, column=1)
 		self.Password.grid(row=2, column=1)
 		self.Email.grid(row=3, column=1)
+		self.Cancel.grid(row=3, column=2)
 		self.LNickname.grid(row=0, column=0)
 		self.LUsername.grid(row=1, column=0)
 		self.LPassword.grid(row=2, column=0)
 		self.LEmail.grid(row=3, column=0)
 		self.Clear.grid(row=1, column=2)
 		self.Submit.grid(row=2, column=2)
-	
-	def clear(self):
-	
-		self.Nickname.delete(0, END)
-		self.Username.delete(0, END)
-		self.Password.delete(0, END)
-		self.Email.delete(0, END)
-	
-	def check_entry(self):
-		
-		if len(self.EUsername) <=2:
-			errorbox("Invalid username!", "Your username needs to be over 2 characters.")
-			return
-		if len(self.ENickname) <=2:
-			errorbox("Invalid nickname!", "Your nickname needs to be over 2 characters.")
-			return 				
-			
-		if b.check_field('username', self.EUsername) == False:
-			pass
-		else:	
-			errorbox("Username already taken!", "This username has been taken already, please choose another.")
-			return
-		if b.check_field('email', self.EEmail) == False:
-			b.add_user('user', self.EUsername, self.EPassword, self.EEmail)
-			infobox("Account created!", "The account has successfuly been created.")
-		else:
-			errorbox("Email already taken!", "An account has already been created with this email, contact an adminisrator if you do not have access to the account.")
-			return				
-	def submit(self):
-		
+
+	def submit_registration(self):
+
 		self.ENickname = self.Nickname.get().lower()
 		self.EUsername = self.Username.get().lower()
 		self.EPassword = self.Password.get().lower()
 		self.EEmail = self.Email.get().lower()
-		self.check_entry()
+		self.ENick = self.Nickname.get().lower()
+#		self.Registration_Window.withdraw()
+#		self.login_Window.deiconify()
 
+		data = "{}|{}|{}|{}".format(self.EUsername, self.EPassword, self.EEmail, self.ENick)
+		packet = "Registration^{}".format(data)
+		self.client_socket.send_data(packet)
 
-class LoginWindow():
-	
-	def __init__(self, master=None):
-	
-		Frame.__init__(self, master)
-		self.grid()
-		self.master.title("Login form")		
-		self.make_widgets()
-		
-		
-	def make_widgets(self):	
-		  
-		self.Username = Entry(self)
-		self.Password = Entry(self, show="*")
-		self.Submit = Button(self, text='Submit', command=self.submit)
-		self.Clear = Button( self, text='Clear', command=self.clear)
-		#L... is the label equivilant to the entry (text box)
-		
-		self.LUsername = Label(self,text="Username:")
-		self.LPassword = Label(self,text="Password:")
+	def submit_connection(self):
 
-		self.Username.grid(row=1, column=1)
-		self.Password.grid(row=2, column=1)
-		self.LUsername.grid(row=1, column=0)
-		self.LPassword.grid(row=2, column=0)
-		self.Clear.grid(row=1, column=2)
-		self.Submit.grid(row=2, column=2)
-	
-	def clear(self):
-	
-		self.Username.delete(0, END)
-		self.Password.delete(0, END)
-	
-	def check_entry(self):
+		self.EAddress = self.Address.get()
 		
-		if len(self.EUsername) <=2:
-			errorbox("Invalid username!", "Your username needs to be over 2 characters.")
+		try:		
+			self.EPort = int(self.Port.get())
+		except:
+			errorbox("Invalid Port", "The port you entered is invalid, please eneter a valid integer")
+			return			
+
+		self.client_socket = ClientConnection(self)			
+		self.client_socket.easy_host = self.EAddress
+		self.client_socket.host_port = self.EPort
+		self.client_socket.daemon = True
+
+		try:
+			self.client_socket.start()
+			#Timer needed otherwise the the threaded functions will not run in time.
+			time.sleep(2.0)			
+			if self.connected == False:
+				print("False")
+				raise ValueError
+			time.sleep(0.5)
+			self.make_login()
+
+		except ValueError:
+			errorbox("Unable to connect", "Please check the server address/port is correct and/or you are connected to the internet")
 			return
-		if b.check_field('username', self.EUsername) == False:
+
+	def warn_exit(self):
+			
+		errorbox("An error has occured!", "An error has occured and the program has been forced to shutdown, sorry for the trouble!")
+
+	def submit_login(self):
+
+		self.EUsername = self.Login_Username.get().lower()
+		self.EPassword = self.Login_Password.get().lower()
+		data = "{}|{}".format(self.EUsername, self.EPassword)
+		packet = "Login^{}".format(data)
+
+		self.client_socket.send_data(packet)
+		time.sleep(2)
+		if self.loggedin == True:
+			print("Ooooo God yes!")
+			username = self.EUsername
+#			self.login_Window.withdraw()
+
+			
 			pass
-		else:	
-			errorbox("Username already taken!", "This username has been taken already, please choose another.")
-			return
-	def submit(self):
+		else:		
+			errorbox("Invalid login details", "Please check the information is correct, if the issue persists then contact an administrator")					
+
+	def clear_login(self):
+		pass
+
+	def clear_connection(self):
+		pass
+	def clear_registration(self):
+		pass
+	def cancel_registration(self):
 		
-		self.EUsername = self.Username.get().lower()
-		self.EPassword = self.Password.get().lower()		
-		self.check_entry()
+		self.Registration_Window.withdraw()
+		self.login_Window.deiconify()
+
+if __name__ == "__main__":
 		
-import pictsql
-b = pictsql.SQLManager()
-b.path = './data'
-b.main()
-
-b.field = 'username'
-
-
-a = RegistrationWindow()
-a.mainloop()
-
-#userwindow = ServerWindow()
-#userwindow.mainloop()
+	root = Tk()
+	a = UserInterface(root)
+	a.mainloop()
