@@ -1,5 +1,5 @@
 
-import pygame, random, math, UDPTests, socket, socketserver, threading, sys
+import pygame, random, math, socket, socketserver, threading, sys, builtins
 from time import clock as clocky
 # image from http://www.frambozenbier.org/index.php/raspi-community-news/20167-antiloquax-on-getting-stuck-in-to-python
 
@@ -172,7 +172,7 @@ class ThreadedUDP(socketserver.ThreadingMixIn, socketserver.UDPServer):
 	
 
 class start(threading.Thread):
-#def start():		
+
 
 	def __init__(self, address, port):
 	
@@ -189,7 +189,7 @@ class start(threading.Thread):
 		size = (700, 540)
 		global screen
 		screen = pygame.display.set_mode(size)
-		pygame.display.set_caption('Shooting test')
+		pygame.display.set_caption('Shooting Server!')
 
 		background = pygame.Surface(size).convert()
 		background.fill((160, 160, 160))
