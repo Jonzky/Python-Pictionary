@@ -6,6 +6,7 @@ from time import clock as clocky
 
 clients = []
 builtins.arrow_dict = {}
+bullets_dict = {}
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -35,6 +36,7 @@ class Bullet(pygame.sprite.Sprite):
 
 		if self.lifetime < 0:
 			bullets.remove(self)
+			self.kill()
 			return False
 		self.lifetime -= 0.3
 
@@ -55,7 +57,7 @@ class Arrow(pygame.sprite.Sprite):
 		self.image = pygame.image.load('test.png').convert()
 		background = self.image.get_at((0, 0))
 		self.image.set_colorkey(background)
-		
+		self.recenthit = True
 		self.rect = self.image.get_rect()
 		self.rect.centerx = x
 		self.rect.centery = y
@@ -63,11 +65,15 @@ class Arrow(pygame.sprite.Sprite):
 		self.olddirection = self.direction
 		self.master = master
 		self.user = user
+		self.lasthit = clocky()
 
 	def update(self):	
 		
 		self.move()
 		self.update_client()
+		
+		if clocky() - self.lasthit > 2:
+			self.recenthit = False
 
 	def update_pos(self, centerx, centery, gospeed, direction):
 		
@@ -80,6 +86,14 @@ class Arrow(pygame.sprite.Sprite):
 			
 		self.gospeed -= 0.02
 		self.move()
+		
+	def hit(self):
+		
+		self.recenthit = True
+		self.gospeed = 0
+		self.rect.centerx = random.randint(0, width)
+		self.rect.centery = random.randint(0, height)
+		self.update_client()
 		
 	def move(self):
 		
@@ -99,7 +113,7 @@ class Arrow(pygame.sprite.Sprite):
 
 	def update_client(self):
 	
-		packet = "CLIENT*{}*{}*{}*{}*{}*2".format(self.user, self.rect.centerx, self.rect.centery, self.gospeed, self.direction).encode('utf8')
+		packet = "CLIENT*{}*{}*{}*{}*{}*2*False".format(self.user, self.rect.centerx, self.rect.centery, self.gospeed, self.direction).encode('utf8')
 	
 		for address in clients:
 			
@@ -140,9 +154,13 @@ class UDPHandler(socketserver.BaseRequestHandler):
 
 		if stripped_data[6] == 3:
 			a = Bullet(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
+			global bullets_dict
+			_ran = random.randint(0,10000)
+			bullets_dict[_ran] = a
+	
 			bullets.add(a)
 			
-			packet = "CLIENT*{}*{}*{}*0*{}*3".format(stripped_data[1], stripped_data[2], stripped_data[3], stripped_data[5]).encode('utf8')
+			packet = "CLIENT*{}*{}*{}*0*{}*3*False".format(stripped_data[1], stripped_data[2], stripped_data[3], stripped_data[5]).encode('utf8')
 	
 			for address in clients:
 			
@@ -155,7 +173,7 @@ class UDPHandler(socketserver.BaseRequestHandler):
 			if not stripped_data[1] in builtins.arrow_dict:
 				builtins.arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
 				arrows.add(builtins.arrow_dict[stripped_data[1]])
-				print("Added AEEEEOW")
+
 		elif stripped_data[6] == 2:
 
 			if stripped_data[1] in builtins.arrow_dict:
@@ -186,8 +204,10 @@ class start(threading.Thread):
 	def run(self):
 		
 
-		pygame.init()	
-		size = (700, 540)
+		pygame.init()
+		global width, height
+		width, height = 700, 540	
+		size = (width, height)
 		global screen
 		screen = pygame.display.set_mode(size)
 		pygame.display.set_caption('Shooting Server!')
@@ -209,6 +229,24 @@ class start(threading.Thread):
 		while running:		
 
 			clock.tick(30)	
+
+			
+			for item in builtins.arrow_dict:
+				
+				for bull in bullets_dict:
+					
+					_bullet = bullets_dict[bull]
+				
+					if pygame.sprite.collide_rect(builtins.arrow_dict[item], _bullet):
+					
+						if builtins.arrow_dict[item].recenthit:
+							pass
+						else:
+							builtins.arrow_dict[item].hit()	
+				
+						print('Item - {} - Colided!'.format(builtins.arrow_dict[item]))
+			
+			
 
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:

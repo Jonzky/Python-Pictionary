@@ -4,7 +4,7 @@ from getpass import getuser
 import pictsql
 
 address = '127.0.0.1'
-port = 2500
+port = 2600
 ping_dict = {}
 ping_dict_buff = {}
 connected_dict = {}
@@ -95,7 +95,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
 			else:
 				
 				print("Error: Ping recieved from {} - Randint - {} - User is not in the dictionary".format(self.client_address, ping_data))
-
+				ping_dict[ping_data] = time.clock()				
+				
+				
 		elif header == 'RECON':
 			
 			ping_data = int(splitted_data[1])
@@ -106,8 +108,20 @@ class TCPHandler(socketserver.BaseRequestHandler):
 			else:
 				connected_dict[ping_data] = self.request
 		
-		
+	def send(self, packet):
+	
+		for a, b in list(connected_dict.items()):
+		#The various sleep times are to try to ensure the text is formatted nicely.
+							
+#			encoded_v = "DC^{}".format(k).encode("utf8")
+			print("Sending DC message")
 
+			try:
+				b.send(encoded_v)
+			except socket.error as error:
+				print("BOOOORRRRKED PIPE - {}".format(error))
+				del connected_dict[a]					
+		
 
 class ClientPinger(threading.Thread):
 	
@@ -149,9 +163,9 @@ class ClientPinger(threading.Thread):
 						if k in builtins.arrow_dict:						
 							builtins.arrows.remove(builtins.arrow_dict[k])					
 							print("Yey, a client has DC'ed - Shitstorms a brewing. Client - {} Time - {}".format(k, v))
+							del builtins.arrow_dict[k]
 						else:
 							print("Ewwww")
-						del builtins.arrow_dict[k]							
 							
 					except socket.error as error:
 						print("Errrrors - {}".format(error))	

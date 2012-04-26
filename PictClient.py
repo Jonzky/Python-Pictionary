@@ -130,6 +130,8 @@ class TCPConnection(threading.Thread):
 					self.zero_count += 1
 					if self.zero_count >=30:
 						self.master.running = False
+						print("!!!!!!!!Shut this shit DOWWWWWN!")
+						sys.exit("An error has occured, please try to connect to the host again")
 				elif decoded_data == "***ShUtdOwn***":
 					print("Shut this shit DOWWWWWN!")
 				elif decoded_data.startswith("DC"):

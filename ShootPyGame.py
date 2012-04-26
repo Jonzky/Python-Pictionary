@@ -1,9 +1,11 @@
 
-import pygame, random, math, threading, socket, time, sys, builtins
+import pygame, random, math, threading, socket, time, sys, builtins, os
 from PictClient import ClientPinger
 from PictClient import TCPConnection
 from time import clock as clocky
 # image from http://www.frambozenbier.org/index.php/raspi-community-news/20167-antiloquax-on-getting-stuck-in-to-python
+#Explosion sprites from David Howe http://homepage.ntlworld.com/david.howe50/page16a.html
+
 
 builtins.arrow_dict = {}
 bullet_dict = {}
@@ -20,8 +22,13 @@ class Bullet(pygame.sprite.Sprite):
 		self.lifetime = 10
 		self.direction = self.master.direction
 		self.rect = self.image.get_rect()
+		
+		self.rect.centerx += (20*(math.cos(self.master.radian_angle)))
+		self.rect.centery -= (20*(math.sin(self.master.radian_angle)))			
+
 		self.rect.centerx = self.master.rect.centerx+5
 		self.rect.centery = self.master.rect.centery+5
+
 
 		self.udp_client = client_udp		
 		self.image = pygame.transform.rotate(self.orginal_image, self.direction)
@@ -44,14 +51,18 @@ class Bullet(pygame.sprite.Sprite):
 	def timer(self):
 
 		if self.lifetime < 0:
+		
+			self.explosion = Explosion(self, self.rect.centerx, self.rect.centery)
+			explosion.add(self.explosion)
 			bullets.remove(self)
+			#self.kill()
 		self.lifetime -= 0.3
 
 	def move(self):
 	
-		radian_angle = math.radians(self.direction)
-		self.rect.centerx += (10*(math.cos(radian_angle)))
-		self.rect.centery -= (10*(math.sin(radian_angle)))			
+		self.radian_angle = math.radians(self.direction)
+		self.rect.centerx += (10*(math.cos(self.radian_angle)))
+		self.rect.centery -= (10*(math.sin(self.radian_angle)))			
 
 
 #################################
@@ -75,6 +86,7 @@ class Arrow(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect()
 		self.rect.centerx = width-10
 		self.rect.centery = hieght-10
+		self.not_space = True
 
 		self.udp_client = client_udp
 		self.server_update(True)
@@ -87,7 +99,8 @@ class Arrow(pygame.sprite.Sprite):
 			self.rect = self.image.get_rect(center=self.rect.center)						
 			if self.gospeed > 0:
 				self.slowdown()
-				
+		if not keys[pygame.K_SPACE]:
+			self.not_space = True 		
 		if keys[pygame.K_LEFT]:
 			self.direction += 10
 			self.image = pygame.transform.rotate(self.original, self.direction)
@@ -102,11 +115,13 @@ class Arrow(pygame.sprite.Sprite):
 			self.rect = self.image.get_rect(center=self.rect.center)						
 			self.move()
 		if keys[pygame.K_SPACE]:
-			if clocky() - self.clock > 0.01:
-				self.clock = clocky()
-				time = str(clocky())
-				time = Bullet(self)
-				bullets.add(time)
+			if self.not_space:
+				if clocky() - self.clock > 0.02:
+					self.clock = clocky()
+					time = str(clocky())
+					time = Bullet(self)
+					bullets.add(time)
+					self.not_space = False
 				
 		self.server_update()		
 	
@@ -121,14 +136,61 @@ class Arrow(pygame.sprite.Sprite):
 			
 		self.gospeed -= 0.02
 		self.move()
+
+	def update_pos(self, centerx, centery, gospeed, direction):
+		
+		self.rect.centerx, self.rect.centery, self.gospeed, self.direction = centerx, centery, gospeed, direction
 		
 	def move(self):
 
 		speeed = math.exp(self.gospeed)
-		radian_angle = math.radians(self.direction)
-		self.rect.centerx += (speeed*(math.cos(radian_angle)))
-		self.rect.centery -= (speeed*(math.sin(radian_angle)))			
+		self.radian_angle = math.radians(self.direction)
+		self.rect.centerx += (speeed*(math.cos(self.radian_angle)))
+		self.rect.centery -= (speeed*(math.sin(self.radian_angle)))			
+
+####################################	
+
+class Explosion(pygame.sprite.Sprite):
+
+	def __init__(self, master, x, y):
+
+		super().__init__()
+		
+		self.num_images = 99
+		self.cur_image = 0
+		self.master = master
+
+
+		self.explosion_images = []
+
+		for i in range(0, 10):
+			for j in range(0, 10):
+
+				self.explosion_images.append(pygame.image.load(os.path.join('Sprites', 'boom-1-00{}{}.png'.format(i,j))).convert())
 	
+	
+		self.image = self.explosion_images[0]
+
+		self.rect = self.image.get_rect()
+
+		self.rect.centerx = x
+		self.rect.centery = y
+
+				
+		
+	def update(self):
+
+		self.cur_image += 1
+		if self.cur_image >= 99:
+			explosion.remove(self)
+			self.master.kill()
+			self.kill()
+		else:
+			
+			self.image = self.explosion_images[self.cur_image]
+			background = self.image.get_at((0, 0))		
+			self.image.set_colorkey(background)		
+		
 
 ####################################
 
@@ -163,6 +225,7 @@ class OtherBullet(pygame.sprite.Sprite):
 
 		if self.lifetime < 0:
 			bullets.remove(self)
+			self.kill()
 			return False
 		self.lifetime -= 0.3
 
@@ -210,7 +273,7 @@ class OtherArrow(pygame.sprite.Sprite):
 	def check(self):
 		
 		cur_time = time.clock()
-		print("Check Cur - {} - Last - {} -".format(cur_time, self.lastupdate))
+
 		if (cur_time - self.lastupdate) > 8:
 			
 			print("User DC'ed")
@@ -286,11 +349,14 @@ class ClientUDP(threading.Thread):
 		stripped_data[4] = float(stripped_data[4])
 		stripped_data[2] = int(stripped_data[2])
 		stripped_data[3] = int(stripped_data[3])
-
+		stripped_data[7] = bool(stripped_data[7])
 
 		if stripped_data[1] == self.randomint:
-#			print('aww')
-			pass
+			
+			if stripped_data[7] == True:
+
+				my_arrow.update_pos(stripped_data[2], stripped_data[3], stripped_data[4], stripped_data[5])
+	
 		elif stripped_data[6] == 3:
 
 			global other_bullets
@@ -320,9 +386,17 @@ class ClientUDP(threading.Thread):
 		self.sock.sendto(stringa, (self.host, self.port))
 		
 
+######################################
+def mega_test():
+	explosion_images = []
+	for i in range(0, 10):
+		for j in range(0, 10):
 
+			explosion_images.append(pygame.image.load(os.path.join('Sprites', 'boom-1-00{}{}.png'.format(i,j))).convert())
+	
+	
 
-
+	print(explosion_images)
 
 #####################################
 
@@ -344,6 +418,7 @@ class start(threading.Thread):
 	
 	def run(self):
 	
+		
 		pygame.init()
 		global screen
 		size = (700, 540)
@@ -354,15 +429,17 @@ class start(threading.Thread):
 		background.fill((160, 160, 160))
 		screen.blit(background, (0, 0))
 		print("!")
-		global bullets, arrows, other_bullets
+		global bullets, arrows, other_bullets, explosion
+		explosion = pygame.sprite.Group()
 		builtins.arrows = pygame.sprite.Group()
 		other_bullets = pygame.sprite.Group()
 		bullets = pygame.sprite.Group()
 				
 		global client_udp
 		client_udp = ClientUDP()
-	
-		builtins.arrows.add(Arrow())
+		global my_arrow
+		my_arrow = Arrow()
+		builtins.arrows.add(my_arrow)
 
 		other_bullets = pygame.sprite.Group()
 		bullets = pygame.sprite.Group()
@@ -370,7 +447,7 @@ class start(threading.Thread):
 	
 		clock = pygame.time.Clock()
 		
-	
+#		mega_test()					
 		while self.running:
 			clock.tick(30)
 			for event in pygame.event.get():
@@ -378,7 +455,14 @@ class start(threading.Thread):
 
 					self.running = False
 
+			
+			if pygame.sprite.groupcollide(bullets, builtins.arrows, False, False):
+				a = pygame.sprite.groupcollide(bullets, builtins.arrows, False, False)
 
+			if pygame.sprite.groupcollide(other_bullets, builtins.arrows, True, False):
+				pass		
+
+			
 			builtins.arrows.clear(screen, background)
 			builtins.arrows.update()
 			builtins.arrows.draw(screen)
@@ -390,5 +474,10 @@ class start(threading.Thread):
 			other_bullets.clear(screen, background)
 			other_bullets.update()
 			other_bullets.draw(screen)
+
+			explosion.clear(screen, background)
+			explosion.update()
+			explosion.draw(screen)
 			
-			pygame.display.flip()	
+			pygame.display.flip()
+
