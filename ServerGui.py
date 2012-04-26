@@ -154,7 +154,7 @@ class UDPHandler(socketserver.BaseRequestHandler):
 
 			if not stripped_data[1] in builtins.arrow_dict:
 				builtins.arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
-				builtins.arrows.add(builtins.arrow_dict[stripped_data[1]])
+				arrows.add(builtins.arrow_dict[stripped_data[1]])
 				print("Added AEEEEOW")
 		elif stripped_data[6] == 2:
 

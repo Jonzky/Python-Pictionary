@@ -5,7 +5,7 @@ from PictClient import TCPConnection
 from time import clock as clocky
 # image from http://www.frambozenbier.org/index.php/raspi-community-news/20167-antiloquax-on-getting-stuck-in-to-python
 
-arrow_dict = {}
+builtins.arrow_dict = {}
 bullet_dict = {}
 
 class Bullet(pygame.sprite.Sprite):
@@ -195,17 +195,28 @@ class OtherArrow(pygame.sprite.Sprite):
 		self.rect.centery = y
 		self.original = self.image
 		self.olddirection = self.direction
+		self.lastupdate = 0
 
 	def update(self):	
 		
 		self.move()
+		self.check()
 
 	def update_pos(self, centerx, centery, gospeed, direction):
 		
-		self.rect.centerx, self.rect.centery, self.gospeed, self.direction = centerx, centery, gospeed, direction		
+		self.rect.centerx, self.rect.centery, self.gospeed, self.direction = centerx, centery, gospeed, direction
+		self.lastupdate = time.clock()
 			
-	def transform(self):
-		pass
+	def check(self):
+		
+		cur_time = time.clock()
+		print("Check Cur - {} - Last - {} -".format(cur_time, self.lastupdate))
+		if (cur_time - self.lastupdate) > 8:
+			
+			print("User DC'ed")
+			
+			builtins.arrows.remove(self)
+			
 		
 	def move(self):
 		
@@ -284,9 +295,6 @@ class ClientUDP(threading.Thread):
 
 			global other_bullets
 
-			print("!!2222333!")
-			
-			print(" Direction -{}- X -{}- Y -{}-".format(stripped_data[5], stripped_data[2], stripped_data[3]))
 			randomnumber = random.randint(50,1000)
 				
 			bullet_dict[randomnumber] = OtherBullet(stripped_data[5], stripped_data[2], stripped_data[3])
@@ -296,13 +304,13 @@ class ClientUDP(threading.Thread):
 
 		elif stripped_data[6] == 2:
 			
-			if stripped_data[1] in arrow_dict:
+			if stripped_data[1] in builtins.arrow_dict:
 				
-				arrow_dict[stripped_data[1]].update_pos(stripped_data[2], stripped_data[3], stripped_data[4], stripped_data[5])
+				builtins.arrow_dict[stripped_data[1]].update_pos(stripped_data[2], stripped_data[3], stripped_data[4], stripped_data[5])
 
 			else:
 			
-				arrow_dict[stripped_data[1]] = OtherArrow(stripped_data[5], stripped_data[2], stripped_data[3])
+				builtins.arrow_dict[stripped_data[1]] = OtherArrow(stripped_data[5], stripped_data[2], stripped_data[3])
 				self.arrows.add(arrow_dict[stripped_data[1]])				
 					
 	def update_position(self, username, x, y, speed, direction, type):
@@ -324,13 +332,15 @@ class start(threading.Thread):
 
 
 		global address, port, randomint		
+		
 		address, port, randomint = str(address1), int(port1), int(randomint1)		
+		self.pinger = ClientPinger(address, port, randomint)
+		self.TCP = TCPConnection(self, randomint, address, port)
 		super().__init__()
 		self.daemon = False
 		self.start()
 		self.running = True
-		self.pinger = ClientPinger(address, port, randomint)
-		self.TCP = TCPConnection(randomint, address, port)
+
 	
 	def run(self):
 	

@@ -49,9 +49,7 @@ class ClientConnection(threading.Thread):
 					decoded_data = incoming_data.decode('utf-8').split("^")
 
 					if decoded_data[0] == "*loggEdin*":
-
 						self.randomint = decoded_data[1]
-						
 						self.handler.loggedin = True
 						break
 	
@@ -62,8 +60,6 @@ class ClientConnection(threading.Thread):
 						print("username used")
 					elif decoded_data[0] == "***EmailtAken***":
 						print("email used...")
-
-
 			
 			except socket.error as error:
 				self.handler.warn_exit()
@@ -91,15 +87,16 @@ class ClientConnection(threading.Thread):
 class TCPConnection(threading.Thread):
 	"""This creates a thread off which a client can recieve data from the server"""
 	
-	def __init__(self, randomint, host, port):
+	def __init__(self, master, randomint, host, port):
 		
 		super().__init__()
 		self.daemon = True
 		self.host = host
 		self.port = port
 		self.randomint = randomint
-
 		self.start()
+		self.zero_count = 0
+		self.master = master
 
 	def run(self):
 		
@@ -111,6 +108,9 @@ class TCPConnection(threading.Thread):
 			sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)			
 			sock.connect((self.host, self.port))
 
+			recon_pack = "RECON^{}".format(self.randomint).encode('utf8')
+			
+			sock.send(recon_pack)
 			
 		except socket.error as error:
 			
@@ -120,14 +120,25 @@ class TCPConnection(threading.Thread):
 				
 		while True:
 			try:	
-			
+				print("Trying")
 				incoming_data = sock.recv(max_size)
-				print("Recieved")
+				print(len(incoming_data))
 
 				decoded_data = incoming_data.decode('utf-8')
 
-				if len(incoming_data) == 0:
-					pass
+				if len(decoded_data) == 0:
+					self.zero_count += 1
+					if self.zero_count >=30:
+						self.master.running = False
+				elif decoded_data == "***ShUtdOwn***":
+					print("Shut this shit DOWWWWWN!")
+				elif decoded_data.startswith("DC"):
+				
+					split_data = decoded_data.split("^")
+					randomint = int(split_data[1])
+					builtins.arrows.remove(builtins.arrow_dict[randomint])
+					print("Fuck yeh?")
+
 				else:
 					print(incoming_data.decode('utf-8'))
 			
@@ -166,7 +177,6 @@ class ClientPinger(threading.Thread):
 				
 		while True:
 			
-			print("Ping sent")
 			try:
 			
 				time.sleep(2)

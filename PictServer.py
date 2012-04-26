@@ -4,7 +4,7 @@ from getpass import getuser
 import pictsql
 
 address = '127.0.0.1'
-port = 2600
+port = 2500
 ping_dict = {}
 ping_dict_buff = {}
 connected_dict = {}
@@ -28,14 +28,13 @@ class TCPHandler(socketserver.BaseRequestHandler):
 				data = data.decode("utf-8")
 
 			except socket.error as error:
-				print("Errrrror")
+				print("Errr************************************************************************************************rror")
 				return
 
 			if len(data) < 5:
 				pass
 				
 			else:
-				print(data)
 				self.check_header(data)
 				
 
@@ -77,9 +76,9 @@ class TCPHandler(socketserver.BaseRequestHandler):
 
 			else:
 							
-				randomint = random.randint(1, 100000)
+				randomint = int(random.randint(1, 100000))
 				ping_dict[randomint] = time.clock()
-				connected_dict[randomint] = self.request				
+
 				builtins.connected_clients[randomint] = self.username
 				loggedin = "*loggEdin*^{}".format(randomint).encode("utf8")
 				
@@ -90,14 +89,24 @@ class TCPHandler(socketserver.BaseRequestHandler):
 			ping_data = int(splitted_data[1])
 		
 			if ping_data in ping_dict:
-				print("Ping recieved")
+#				print("Ping recieved")
 				ping_dict[ping_data] = time.clock()
 		
 			else:
 				
 				print("Error: Ping recieved from {} - Randint - {} - User is not in the dictionary".format(self.client_address, ping_data))
 
-				
+		elif header == 'RECON':
+			
+			ping_data = int(splitted_data[1])
+
+		
+			if self.request in connected_dict:
+				print("Error: RECON recieved from {} - Req - {} - User is not in the dictionary".format(self.client_address, self.request))								
+			else:
+				connected_dict[ping_data] = self.request
+		
+		
 
 
 class ClientPinger(threading.Thread):
@@ -107,7 +116,7 @@ class ClientPinger(threading.Thread):
 		super().__init__()
 		self.daemon = True
 		self.start()
-
+ 
 	def run(self):
 		
 		
@@ -116,32 +125,53 @@ class ClientPinger(threading.Thread):
 			time.sleep(2)
 			cur_time = time.clock() 		
 
+			
+			
 		
-			for k, v in list(ping_dict.items()):
+			for _k, v in list(ping_dict.items()):
+
 		
-				print("K - {} V - {}".format(k, v))
+#				print("K - {} V - {}".format(k, v))
 		
+
 				if (cur_time - v) > 8:
 					
-					builtins.arrows.remove(arrow_dict[k])
+					k = int(_k)
+					
+#					print(ping_dict)
+#					print(connected_dict)
+#					print(builtins.arrow_dict[k])				
+
 					try:
 						del connected_dict[k]
-						del builtins.arrow_dict[k]
-						del ping_dict[k]					
-						print("Yey, a client has DC'ed - Shitstorms a brewing. Client - {} Time - {}".format(k, v))
-					except:
-						print("Errrrors")
+						del ping_dict[k]
+						
+						if k in builtins.arrow_dict:						
+							builtins.arrows.remove(builtins.arrow_dict[k])					
+							print("Yey, a client has DC'ed - Shitstorms a brewing. Client - {} Time - {}".format(k, v))
+						else:
+							print("Ewwww")
+						del builtins.arrow_dict[k]							
+							
+					except socket.error as error:
+						print("Errrrors - {}".format(error))	
 
-					for a, b in connected_dict.items():
+					for a, b in list(connected_dict.items()):
 						#The various sleep times are to try to ensure the text is formatted nicely.
-						print(a, b)
 							
 						encoded_v = "DC^{}".format(k).encode("utf8")
-						b.send(encoded_v)
-			
+						print("Sending DC message")
+						print(b)
+						print(connected_dict)
+						try:
+							b.send(encoded_v)
+						except socket.error as error:
+							print("BOOOORRRRKED PIPE - {}".format(error))
+							del connected_dict[a]					
+		
 				else:
-				
-					print("Time - {}, Client-time {}".format(cur_time, v))
+					pass
+#					print("Time - {}, Client-time {}".format(cur_time, v))
 				
 
 
