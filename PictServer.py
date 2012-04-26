@@ -1,18 +1,14 @@
-###This file will handle all of the required (master) server 
-###
-###
-
 import socket, socketserver, threading, sys, time, ServerGui, random, builtins
 from datetime import datetime
 from getpass import getuser
 import pictsql
 
-
 address = '127.0.0.1'
 port = 2600
-
+ping_dict = {}
+ping_dict_buff = {}
+connected_dict = {}
 builtins.connected_clients = {}
-connected_clients_test = {}
 
 class TCPHandler(socketserver.BaseRequestHandler):
 	"""This handles the server for a multi-user chat client,
@@ -22,7 +18,6 @@ class TCPHandler(socketserver.BaseRequestHandler):
 	def handle(self):
 
 
-		print("user connected")		
 
 		while True:
 			
@@ -49,6 +44,7 @@ class TCPHandler(socketserver.BaseRequestHandler):
 		
 		splitted_data = data.split("^")
 		header = splitted_data[0]
+
 		
 		if header == 'Registration':
 			field_data =splitted_data[1].split("|")
@@ -82,12 +78,71 @@ class TCPHandler(socketserver.BaseRequestHandler):
 			else:
 							
 				randomint = random.randint(1, 100000)
-				print("Raaaaaaandomint - {}".format(randomint))
+				ping_dict[randomint] = time.clock()
+				connected_dict[randomint] = self.request				
 				builtins.connected_clients[randomint] = self.username
 				loggedin = "*loggEdin*^{}".format(randomint).encode("utf8")
 				
 				self.request.send(loggedin)
+				
+		elif header == 'PING':
+			
+			ping_data = int(splitted_data[1])
+		
+			if ping_data in ping_dict:
+				print("Ping recieved")
+				ping_dict[ping_data] = time.clock()
+		
+			else:
+				
+				print("Error: Ping recieved from {} - Randint - {} - User is not in the dictionary".format(self.client_address, ping_data))
 
+				
+
+
+class ClientPinger(threading.Thread):
+	
+	def __init__(self):
+
+		super().__init__()
+		self.daemon = True
+		self.start()
+
+	def run(self):
+		
+		
+		while True:
+			
+			time.sleep(2)
+			cur_time = time.clock() 		
+
+		
+			for k, v in list(ping_dict.items()):
+		
+				print("K - {} V - {}".format(k, v))
+		
+				if (cur_time - v) > 8:
+					
+					builtins.arrows.remove(arrow_dict[k])
+					try:
+						del connected_dict[k]
+						del builtins.arrow_dict[k]
+						del ping_dict[k]					
+						print("Yey, a client has DC'ed - Shitstorms a brewing. Client - {} Time - {}".format(k, v))
+					except:
+						print("Errrrors")
+
+					for a, b in connected_dict.items():
+						#The various sleep times are to try to ensure the text is formatted nicely.
+						print(a, b)
+							
+						encoded_v = "DC^{}".format(k).encode("utf8")
+						b.send(encoded_v)
+			
+				else:
+				
+					print("Time - {}, Client-time {}".format(cur_time, v))
+				
 
 
 								
@@ -110,17 +165,9 @@ def server_start(host, port):
 	except socket.error as error:
 		sys.exit("There has been an error trying to create the server, please try again. - ERROR: {}".format(error))
 	
-	
-	print('Running; type !quit to stop...')
-	
-#	try:
+	pinger = ClientPinger()
 	gui_server = ServerGui.start(address, port)
-#	gui_server.daemon = False
-#	gui_server.start()			
-	
-#	except KeyboardInterrupt:
-#		server.shutdown()
-#		sys.exit("Client closed.")
+
 
 if __name__ == "__main__":
 	b = pictsql.SQLManager()

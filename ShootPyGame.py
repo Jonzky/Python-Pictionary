@@ -1,5 +1,7 @@
 
-import pygame, random, math, threading, socket, time, sys
+import pygame, random, math, threading, socket, time, sys, builtins
+from PictClient import ClientPinger
+from PictClient import TCPConnection
 from time import clock as clocky
 # image from http://www.frambozenbier.org/index.php/raspi-community-news/20167-antiloquax-on-getting-stuck-in-to-python
 
@@ -237,7 +239,7 @@ class ClientUDP(threading.Thread):
 		self.host = address
 		self.port = port
 		self.randomint = int(randomint)
-		self.arrows = arrows
+		self.arrows = builtins.arrows
 		self.bullets = bullets
 		self.start()
 
@@ -303,7 +305,6 @@ class ClientUDP(threading.Thread):
 				arrow_dict[stripped_data[1]] = OtherArrow(stripped_data[5], stripped_data[2], stripped_data[3])
 				self.arrows.add(arrow_dict[stripped_data[1]])				
 					
-			
 	def update_position(self, username, x, y, speed, direction, type):
 		
 		stringa = "SERVER*{}*{}*{}*{}*{}*{}".format(username, x, y, speed, direction, type).encode('utf8')
@@ -323,11 +324,13 @@ class start(threading.Thread):
 
 
 		global address, port, randomint		
-		address, port, randomint = address1, port1, randomint1		
+		address, port, randomint = str(address1), int(port1), int(randomint1)		
 		super().__init__()
 		self.daemon = False
 		self.start()
 		self.running = True
+		self.pinger = ClientPinger(address, port, randomint)
+		self.TCP = TCPConnection(randomint, address, port)
 	
 	def run(self):
 	
@@ -342,14 +345,14 @@ class start(threading.Thread):
 		screen.blit(background, (0, 0))
 		print("!")
 		global bullets, arrows, other_bullets
-		arrows = pygame.sprite.Group()
+		builtins.arrows = pygame.sprite.Group()
 		other_bullets = pygame.sprite.Group()
 		bullets = pygame.sprite.Group()
 				
 		global client_udp
 		client_udp = ClientUDP()
 	
-		arrows.add(Arrow())
+		builtins.arrows.add(Arrow())
 
 		other_bullets = pygame.sprite.Group()
 		bullets = pygame.sprite.Group()
@@ -362,15 +365,13 @@ class start(threading.Thread):
 			clock.tick(30)
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
-					
-					print('ping')
-#					self.destroy()
-					sys.exit("UEUUE")
+
 					self.running = False
-	
-			arrows.clear(screen, background)
-			arrows.update()
-			arrows.draw(screen)
+
+
+			builtins.arrows.clear(screen, background)
+			builtins.arrows.update()
+			builtins.arrows.draw(screen)
 			
 			bullets.clear(screen, background)
 			bullets.update()

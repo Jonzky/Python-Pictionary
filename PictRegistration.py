@@ -1,12 +1,15 @@
 from tkinter import *
 from tkinter.messagebox import showwarning as errorbox
 from tkinter.messagebox import showinfo as infobox
-import os, sys, time, threading, socket
+import os, sys, time, threading, socket, builtins, ShootPyGame
 from PictClient import ClientConnection
+from PictClient import TCPConnection
 
 
 global ClientConnnected, username
 ClientConnected = False
+connected = False
+
 
 class UserInterface(Frame):
 
@@ -23,7 +26,7 @@ class UserInterface(Frame):
 		self.registration_failed_username = False
 		self.registration_failed_email = False
 		self.master.protocol("WM_DELETE_WINDOW", self.quit)
-	
+			
 	def quit(self):
 	
 		self.parent.quit()
@@ -125,10 +128,7 @@ class UserInterface(Frame):
 			errorbox("Invalid Port", "The port you entered is invalid, please eneter a valid integer")
 			return			
 
-		self.client_socket = ClientConnection(self)			
-		self.client_socket.easy_host = self.EAddress
-		self.client_socket.host_port = self.EPort
-		self.client_socket.daemon = True
+		self.client_socket = ClientConnection(self, self.EAddress, self.EPort)
 
 		try:
 			self.client_socket.start()
@@ -156,14 +156,22 @@ class UserInterface(Frame):
 		packet = "Login^{}".format(data)
 
 		self.client_socket.send_data(packet)
-		time.sleep(2)
+		time.sleep(1)
 		if self.loggedin == True:
 			print("Ooooo God yes!")
-			username = self.EUsername
-#			self.login_Window.withdraw()
-
+			global username, host, port, randomint, connected
 			
-			pass
+			connected = True
+			self.client_socket.running = False
+			randomint = int(self.client_socket.randomint)
+			username = self.EUsername
+			host, port = str(self.EAddress), int(self.EPort)
+
+			time.sleep(1)
+
+			self.master.quit()
+#			self.login_Window.withdraw()
+			self.quit()
 		else:		
 			errorbox("Invalid login details", "Please check the information is correct, if the issue persists then contact an administrator")					
 
@@ -179,8 +187,24 @@ class UserInterface(Frame):
 		self.Registration_Window.withdraw()
 		self.login_Window.deiconify()
 
-if __name__ == "__main__":
-		
+
+##############Was getting too fustrated with this being the main thread in the program, try to remove 
+##############Tkinter when finished and make pygame the main thread.
+def start():
+
 	root = Tk()
 	a = UserInterface(root)
 	a.mainloop()
+	if connected == True:	
+		root.destroy()
+		print("Yes!!!!!!!!!")
+		time.sleep(2)
+		a = ShootPyGame.start(host, port, randomint)
+	#Not the best way to deal with this but should give pygame (which has daemon=False) to kick in.	
+
+	
+
+if __name__ == "__main__":
+		
+	start()	
+

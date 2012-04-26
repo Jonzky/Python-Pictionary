@@ -5,7 +5,8 @@ from time import clock as clocky
 
 
 clients = []
-arrow_dict = {}
+builtins.arrow_dict = {}
+
 
 class Bullet(pygame.sprite.Sprite):
 
@@ -151,20 +152,20 @@ class UDPHandler(socketserver.BaseRequestHandler):
 		elif stripped_data[6] == 4:
 			global arrows
 
-			if not stripped_data[1] in arrow_dict:
-				arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
-				arrows.add(arrow_dict[stripped_data[1]])
+			if not stripped_data[1] in builtins.arrow_dict:
+				builtins.arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
+				builtins.arrows.add(builtins.arrow_dict[stripped_data[1]])
 				print("Added AEEEEOW")
 		elif stripped_data[6] == 2:
 
-			if stripped_data[1] in arrow_dict:
+			if stripped_data[1] in builtins.arrow_dict:
 		
-				arrow_dict[stripped_data[1]].update_pos(stripped_data[2], stripped_data[3], stripped_data[4], stripped_data[5])
+				builtins.arrow_dict[stripped_data[1]].update_pos(stripped_data[2], stripped_data[3], stripped_data[4], stripped_data[5])
 			
 			else:
 				print("Added AEEEEOW")
-				arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
-				arrows.add(arrow_dict[stripped_data[1]])
+				builtins.arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
+				builtins.arrows.add(builtins.arrow_dict[stripped_data[1]])
 			
 
 class ThreadedUDP(socketserver.ThreadingMixIn, socketserver.UDPServer):
@@ -195,8 +196,8 @@ class start(threading.Thread):
 		background.fill((160, 160, 160))
 		screen.blit(background, (0, 0))
 	
-		global bullets, arrows
-		arrows = pygame.sprite.Group()
+		global bullets
+		builtins.arrows = pygame.sprite.Group()
 		bullets = pygame.sprite.Group()
 
 		clock = pygame.time.Clock()
@@ -213,9 +214,9 @@ class start(threading.Thread):
 				if event.type == pygame.QUIT:
 					running = False
 
-			arrows.clear(screen, background)
-			arrows.update()
-			arrows.draw(screen)
+			builtins.arrows.clear(screen, background)
+			builtins.arrows.update()
+			builtins.arrows.draw(screen)
 			bullets.clear(screen, background)
 			bullets.update()
 			bullets.draw(screen)
