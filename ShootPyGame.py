@@ -16,7 +16,7 @@ class Bullet(pygame.sprite.Sprite):
 
 		super().__init__()
 		width, hieght = screen.get_size()
-		self.image = pygame.image.load('shot.png').convert()
+		self.image = pygame.image.load(os.path.join('Sprites', 'shot.png')).convert()
 		self.orginal_image = self.image
 		self.master = master
 		self.lifetime = 10
@@ -52,10 +52,8 @@ class Bullet(pygame.sprite.Sprite):
 
 		if self.lifetime < 0:
 		
-			self.explosion = Explosion(self, self.rect.centerx, self.rect.centery)
-			explosion.add(self.explosion)
 			bullets.remove(self)
-			#self.kill()
+			self.kill()
 		self.lifetime -= 0.3
 
 	def move(self):
@@ -77,8 +75,9 @@ class Arrow(pygame.sprite.Sprite):
 		width, hieght = screen.get_size()
 		self.direction = 0
 		self.gospeed = 0
+		self.radian_angle = 0
 
-		self.image = pygame.image.load('test.png').convert()
+		self.image = pygame.image.load(os.path.join('Sprites', 'test.png')).convert()
 		background = self.image.get_at((0, 0))
 		self.image.set_colorkey(background)		
 		self.original = self.image
@@ -110,7 +109,10 @@ class Arrow(pygame.sprite.Sprite):
 			self.image = pygame.transform.rotate(self.original, self.direction)
 			self.rect = self.image.get_rect(center=self.rect.center)			
 		if keys[pygame.K_UP]:
-			self.gospeed += 0.05
+			if self.gospeed >= 2:
+				pass
+			else:	
+				self.gospeed += 0.05
 			self.image = pygame.transform.rotate(self.original, self.direction)
 			self.rect = self.image.get_rect(center=self.rect.center)						
 			self.move()
@@ -156,14 +158,14 @@ class Explosion(pygame.sprite.Sprite):
 
 		super().__init__()
 		
-		self.num_images = 99
+		self.num_images = 89
 		self.cur_image = 0
 		self.master = master
 
 
 		self.explosion_images = []
 
-		for i in range(0, 10):
+		for i in range(0, 9):
 			for j in range(0, 10):
 
 				self.explosion_images.append(pygame.image.load(os.path.join('Sprites', 'boom-1-00{}{}.png'.format(i,j))).convert())
@@ -181,9 +183,10 @@ class Explosion(pygame.sprite.Sprite):
 	def update(self):
 
 		self.cur_image += 1
-		if self.cur_image >= 99:
+		if self.cur_image >= self.num_images:
 			explosion.remove(self)
-			self.master.kill()
+			if self.master != '':			
+				self.master.kill()
 			self.kill()
 		else:
 			
@@ -196,16 +199,16 @@ class Explosion(pygame.sprite.Sprite):
 
 class OtherBullet(pygame.sprite.Sprite):
 
-	def __init__(self, direction, x, y):
+	def __init__(self, direction, x, y, key):
 
 		super().__init__()
 
-		self.image = pygame.image.load('shot.png').convert()
+		self.image = pygame.image.load(os.path.join('Sprites', 'shot.png')).convert()
 		self.orginal_image = self.image
 		self.lifetime = 10
 		
 		self.direction = direction
-
+		self.key = key
 		self.rect = self.image.get_rect()
 
 		self.rect.centerx = x
@@ -234,6 +237,15 @@ class OtherBullet(pygame.sprite.Sprite):
 		radian_angle = math.radians(self.direction)
 		self.rect.centerx += (10*(math.cos(radian_angle)))
 		self.rect.centery -= (10*(math.sin(radian_angle)))
+		
+	def remove(self):
+		
+		try:
+			other_bullets.remove(bullet_dict[self.key])
+			del bullet_dict[self.key]
+		except:
+			pass
+		self.kill()			
 	
 	
 ###########################################
@@ -249,7 +261,7 @@ class OtherArrow(pygame.sprite.Sprite):
 		self.direction = direction
 		self.gospeed = 0
 
-		self.image = pygame.image.load('test.png').convert()
+		self.image = pygame.image.load(os.path.join('Sprites', 'test.png')).convert()
 		background = self.image.get_at((0, 0))
 		self.image.set_colorkey(background)
 
@@ -340,10 +352,7 @@ class ClientUDP(threading.Thread):
 	
 		stripped_data = data.split('*')
 		stripped_data[1] = int(stripped_data[1])
-		
-#		print(stripped_data[1], self.randomint)
 
-		
 		stripped_data[6] = int(stripped_data[6])
 		stripped_data[5] = float(stripped_data[5])
 		stripped_data[4] = float(stripped_data[4])
@@ -361,12 +370,18 @@ class ClientUDP(threading.Thread):
 
 			global other_bullets
 
+			print("bullet")
+
 			randomnumber = random.randint(50,1000)
 				
-			bullet_dict[randomnumber] = OtherBullet(stripped_data[5], stripped_data[2], stripped_data[3])
+			bullet_dict[randomnumber] = OtherBullet(stripped_data[5], stripped_data[2], stripped_data[3], randomnumber)
 
 			other_bullets.add(bullet_dict[randomnumber])
 
+		elif stripped_data[6] == 7:
+			
+			a = Explosion('', stripped_data[2], stripped_data[3])
+			explosion.add(a)
 
 		elif stripped_data[6] == 2:
 			
@@ -421,12 +436,18 @@ class start(threading.Thread):
 		
 		pygame.init()
 		global screen
-		size = (700, 540)
+		global width, height
+		width, height = 800, 800
+		size = (width, height)	
 		screen = pygame.display.set_mode(size)
-		pygame.display.set_caption('Shooting test')
+		pygame.display.set_caption('Pygame Space Shooter')
+
+
+		background = pygame.image.load(os.path.join('Sprites', 'nebula-reflection.jpg'))
+		background = background.convert()
 	
-		background = pygame.Surface(size).convert()
-		background.fill((160, 160, 160))
+#		background = pygame.Surface(size).convert()
+#		background.fill((160, 160, 160))
 		screen.blit(background, (0, 0))
 		print("!")
 		global bullets, arrows, other_bullets, explosion
@@ -446,8 +467,8 @@ class start(threading.Thread):
 	
 	
 		clock = pygame.time.Clock()
-		
-#		mega_test()					
+
+
 		while self.running:
 			clock.tick(30)
 			for event in pygame.event.get():
@@ -456,12 +477,24 @@ class start(threading.Thread):
 					self.running = False
 
 			
-			if pygame.sprite.groupcollide(bullets, builtins.arrows, False, False):
-				a = pygame.sprite.groupcollide(bullets, builtins.arrows, False, False)
+#			try:
+			
+			for item in builtins.arrow_dict:
+			
+				_arrow = builtins.arrow_dict[item]
+				
+				for bull in bullet_dict:
+					
+					_bullet = bullet_dict[bull]
+				
+					if pygame.sprite.collide_rect(_arrow, _bullet):
+				
+							_bullet.remove()	
+	
 
-			if pygame.sprite.groupcollide(other_bullets, builtins.arrows, True, False):
-				pass		
-
+#			except:
+				
+#				print("Error in collision detection. Skipping it.")
 			
 			builtins.arrows.clear(screen, background)
 			builtins.arrows.update()

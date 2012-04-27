@@ -163,12 +163,11 @@ class ClientPinger(threading.Thread):
 						if k in builtins.arrow_dict:						
 							builtins.arrows.remove(builtins.arrow_dict[k])					
 							print("Yey, a client has DC'ed - Shitstorms a brewing. Client - {} Time - {}".format(k, v))
-							del builtins.arrow_dict[k]
-						else:
-							print("Ewwww")
-							
-					except socket.error as error:
-						print("Errrrors - {}".format(error))	
+							del builtins.arrow_dict[k]							
+					except:
+						del ping_dict[k]
+					
+						print("Errrrors")	
 
 					for a, b in list(connected_dict.items()):
 						#The various sleep times are to try to ensure the text is formatted nicely.

@@ -135,7 +135,6 @@ class UserInterface(Frame):
 			#Timer needed otherwise the the threaded functions will not run in time.
 			time.sleep(2.0)			
 			if self.connected == False:
-				print("False")
 				raise ValueError
 			time.sleep(0.5)
 			self.make_login()
@@ -158,7 +157,6 @@ class UserInterface(Frame):
 		self.client_socket.send_data(packet)
 		time.sleep(1)
 		if self.loggedin == True:
-			print("Ooooo God yes!")
 			global username, host, port, randomint, connected
 			
 			connected = True
@@ -197,7 +195,6 @@ def start():
 	a.mainloop()
 	if connected == True:	
 		root.destroy()
-		print("Yes!!!!!!!!!")
 		time.sleep(2)
 		a = ShootPyGame.start(host, port, randomint)
 	#Not the best way to deal with this but should give pygame (which has daemon=False) to kick in.	

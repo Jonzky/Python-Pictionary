@@ -43,7 +43,6 @@ class ClientConnection(threading.Thread):
 			try:	
 			
 				incoming_data = sock.recv(max_size)
-				print("Recieved")
 				if self.handler.loggedin == False:
 
 					decoded_data = incoming_data.decode('utf-8').split("^")
@@ -120,7 +119,6 @@ class TCPConnection(threading.Thread):
 				
 		while True:
 			try:	
-				print("Trying")
 				incoming_data = sock.recv(max_size)
 				print(len(incoming_data))
 
@@ -139,7 +137,6 @@ class TCPConnection(threading.Thread):
 					split_data = decoded_data.split("^")
 					randomint = int(split_data[1])
 					builtins.arrows.remove(builtins.arrow_dict[randomint])
-					print("Fuck yeh?")
 
 				else:
 					print(incoming_data.decode('utf-8'))

@@ -1,5 +1,5 @@
 
-import pygame, random, math, socket, socketserver, threading, sys, builtins
+import pygame, random, math, socket, socketserver, threading, sys, builtins, os
 from time import clock as clocky
 # image from http://www.frambozenbier.org/index.php/raspi-community-news/20167-antiloquax-on-getting-stuck-in-to-python
 
@@ -7,15 +7,78 @@ from time import clock as clocky
 clients = []
 builtins.arrow_dict = {}
 bullets_dict = {}
+explosion_dict = {}
 
+#########################################
+
+
+class Explosion(pygame.sprite.Sprite):
+
+	def __init__(self, master, x, y):
+
+		super().__init__()
+		
+		
+		
+		self.randint = random.randint(1, 100)
+		explosion_dict[self.randint] = self
+		
+		self.num_images = 89
+		self.cur_image = 0
+		self.master = master
+
+		self.explosion_images = []
+
+		for i in range(0, 9):
+			for j in range(0, 10):
+
+				self.explosion_images.append(pygame.image.load(os.path.join('Sprites', 'boom-1-00{}{}.png'.format(i,j))).convert())
+
+		self.image = self.explosion_images[0]
+		self.rect = self.image.get_rect()
+
+		self.rect.centerx = x
+		self.rect.centery = y
+		self.update_client()
+
+				
+		
+	def update(self):
+
+		self.cur_image += 1
+		if self.cur_image >= self.num_images:
+			explosion.remove(self)
+			try:
+				del explosion_dict[self.randint]
+			except:
+				pass
+			if self.master != '':
+				self.master.kill()
+			self.kill()
+		else:
+			
+			self.image = self.explosion_images[self.cur_image]
+			background = self.image.get_at((0, 0))		
+			self.image.set_colorkey(background)	
+
+	def update_client(self):
+	
+		packet = "CLIENT*1*{}*{}*1*1*7*False".format(self.rect.centerx, self.rect.centery).encode('utf8')
+
+		for address in clients:
+
+			outgoing_udp.sendto(packet, address)
+
+
+#########################################
 
 class Bullet(pygame.sprite.Sprite):
 
-	def __init__(self, master, direction, x, y, user):
+	def __init__(self, master, direction, x, y, user, key):
 
 		super().__init__()
 
-		self.image = pygame.image.load('shot.png').convert()
+		self.image = pygame.image.load(os.path.join('Sprites', 'shot.png')).convert()
 		self.lifetime = 10
 		self.direction = direction
 		self.rect = self.image.get_rect()
@@ -25,6 +88,7 @@ class Bullet(pygame.sprite.Sprite):
 		self.rect = self.image.get_rect(center=self.rect.center)					
 		self.master = master
 		self.user = user
+		self.key = key
 		
 
 	def update(self):
@@ -36,9 +100,17 @@ class Bullet(pygame.sprite.Sprite):
 
 		if self.lifetime < 0:
 			bullets.remove(self)
-			self.kill()
-			return False
+			del bullets_dict[self.key]
+			self.explosion = Explosion(self, self.rect.centerx, self.rect.centery)			
+			explosion.add(self.explosion)
+			
 		self.lifetime -= 0.3
+		
+	def remove(self):
+		
+		bullets.remove(self)
+		del bullets_dict[self.key]
+		self.kill()	
 
 	def move(self):
 	
@@ -54,7 +126,7 @@ class Arrow(pygame.sprite.Sprite):
 		self.clock = clocky()
 		self.direction = direction
 		self.gospeed = 0
-		self.image = pygame.image.load('test.png').convert()
+		self.image = pygame.image.load(os.path.join('Sprites', 'test.png')).convert()
 		background = self.image.get_at((0, 0))
 		self.image.set_colorkey(background)
 		self.recenthit = True
@@ -89,6 +161,8 @@ class Arrow(pygame.sprite.Sprite):
 		
 	def hit(self):
 		
+		self.explosion = Explosion('', self.rect.centerx, self.rect.centery)			
+		explosion.add(self.explosion)
 		self.recenthit = True
 		self.gospeed = 0
 		self.rect.centerx = random.randint(0, width)
@@ -111,6 +185,18 @@ class Arrow(pygame.sprite.Sprite):
 		self.olddirection = self.direction									
 
 
+		if self.rect.centerx > width:
+			self.rect.centerx = 0
+		if self.rect.centerx < 0:
+			self.rect.centerx = width
+		if self.rect.centery > height:
+			self.rect.centery = 0
+		if self.rect.centery < 0:
+			self.rect.centery = height
+
+	        
+
+
 	def update_client(self):
 	
 		packet = "CLIENT*{}*{}*{}*{}*{}*2*False".format(self.user, self.rect.centerx, self.rect.centery, self.gospeed, self.direction).encode('utf8')
@@ -118,6 +204,7 @@ class Arrow(pygame.sprite.Sprite):
 		for address in clients:
 			
 			outgoing_udp.sendto(packet, address)
+			
 
 
 class UDPHandler(socketserver.BaseRequestHandler):
@@ -153,9 +240,10 @@ class UDPHandler(socketserver.BaseRequestHandler):
 		stripped_data[3] = int(stripped_data[3])
 
 		if stripped_data[6] == 3:
-			a = Bullet(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
+		
 			global bullets_dict
 			_ran = random.randint(0,10000)
+			a = Bullet(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1], _ran)
 			bullets_dict[_ran] = a
 	
 			bullets.add(a)
@@ -165,7 +253,6 @@ class UDPHandler(socketserver.BaseRequestHandler):
 			for address in clients:
 			
 				outgoing_udp.sendto(packet, address)
-			
 			
 		elif stripped_data[6] == 4:
 			global arrows
@@ -181,7 +268,7 @@ class UDPHandler(socketserver.BaseRequestHandler):
 				builtins.arrow_dict[stripped_data[1]].update_pos(stripped_data[2], stripped_data[3], stripped_data[4], stripped_data[5])
 			
 			else:
-				print("Added AEEEEOW")
+
 				builtins.arrow_dict[stripped_data[1]] = Arrow(self, stripped_data[5], stripped_data[2], stripped_data[3], stripped_data[1])
 				builtins.arrows.add(builtins.arrow_dict[stripped_data[1]])
 			
@@ -206,19 +293,23 @@ class start(threading.Thread):
 
 		pygame.init()
 		global width, height
-		width, height = 700, 540	
+		width, height = 800, 800	
 		size = (width, height)
 		global screen
 		screen = pygame.display.set_mode(size)
 		pygame.display.set_caption('Shooting Server!')
 
-		background = pygame.Surface(size).convert()
-		background.fill((160, 160, 160))
+		background = pygame.image.load(os.path.join('Sprites', 'nebula-reflection.jpg'))
+		background = background.convert()
+
+#		background = pygame.Surface(size).convert()
+#		background.fill((160, 160, 160))
 		screen.blit(background, (0, 0))
 	
-		global bullets
+		global bullets, explosion
 		builtins.arrows = pygame.sprite.Group()
 		bullets = pygame.sprite.Group()
+		explosion = pygame.sprite.Group()
 
 		clock = pygame.time.Clock()
 		running = True
@@ -230,23 +321,57 @@ class start(threading.Thread):
 
 			clock.tick(30)	
 
+
+			try:
 			
-			for item in builtins.arrow_dict:
+				for item in builtins.arrow_dict:
+			
+					_arrow = builtins.arrow_dict[item]
 				
-				for bull in bullets_dict:
+					for bull in bullets_dict:
 					
-					_bullet = bullets_dict[bull]
+						_bullet = bullets_dict[bull]
 				
-					if pygame.sprite.collide_rect(builtins.arrow_dict[item], _bullet):
 					
-						if builtins.arrow_dict[item].recenthit:
-							pass
-						else:
-							builtins.arrow_dict[item].hit()	
+						if pygame.sprite.collide_rect(_arrow, _bullet):
 				
-						print('Item - {} - Colided!'.format(builtins.arrow_dict[item]))
-			
-			
+					
+							if _arrow.recenthit == True:
+								pass
+							elif _bullet.user == item:
+								pass				
+							else:	
+								_arrow.hit()
+								_bullet.remove()	
+	
+					for explo in explosion_dict:
+				
+						_explosion = explosion_dict[explo]
+						
+						
+						if pygame.sprite.collide_rect(_arrow, _explosion):
+						
+							if _arrow.recenthit == True:
+								pass
+							else:	
+								_arrow.hit()
+						
+					for obj in builtins.arrow_dict:
+						
+						_arrow2 = builtins.arrow_dict[obj]
+
+					
+						if _arrow2 == _arrow:						
+						
+							continue
+						
+						elif pygame.sprite.collide_rect(_arrow, _arrow2):
+					
+							_arrow.hit()
+							_arrow2.hit()	
+			except:
+				
+				print("Error in collision detection. Skipping it.")
 
 			for event in pygame.event.get():
 				if event.type == pygame.QUIT:
@@ -255,9 +380,15 @@ class start(threading.Thread):
 			builtins.arrows.clear(screen, background)
 			builtins.arrows.update()
 			builtins.arrows.draw(screen)
+			
 			bullets.clear(screen, background)
 			bullets.update()
 			bullets.draw(screen)
+			
+			explosion.clear(screen, background)
+			explosion.update()
+			explosion.draw(screen)
+
 			pygame.display.flip()
 
 
